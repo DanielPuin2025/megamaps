@@ -386,6 +386,33 @@ const STORAGE_KEY     = "megamaps_salones_v3";
 const RUTAS_KEY       = "megamaps_rutas_v1";
 const FOTOS_KEY       = "megamaps_fotos_v1";
 const FOTOS_RUTA_KEY  = "megamaps_fotos_ruta_v1";
+const FOTOS_BASE_POR_NODO = {
+  entrada: "assets/entrada.jpeg",
+  cafeteria: "assets/cafeteria.jpeg",
+  transicion: "assets/transicion.jpeg",
+  coordinacion: "assets/coordinacion.jpeg",
+  cancha_central: "assets/imagen i.jpeg",
+  escaleras_izq: "assets/pasillo izquierdo rampla.jpeg",
+  escaleras_principales: "assets/bajada de rampla (2piso).jpeg",
+  pasillo_piso2: "assets/bajada de rampla (2piso).jpeg",
+  pasillo_der: "assets/pasillo transicion.jpeg",
+  biblioteca: "assets/biblioteca.jpeg",
+  ...Object.fromEntries(
+    Array.from({length: 33}, (_, index) => {
+      const numero = index < 18 ? 101 + index : 201 + index - 18;
+      return [`salon_${numero}`, `assets/salon${numero}.jpeg`];
+    }).filter(([nodeId]) => !["salon_105", "salon_205"].includes(nodeId))
+  ),
+};
+const FOTOS_BASE_POR_SALIDA = {
+  cafeteria: "assets/sal de caferia direcion a la rampla.jpeg",
+  biblioteca: "assets/salida de biblioteca.jpeg",
+};
+const FOTOS_BASE_POR_GIRO = {
+  "⬅️": "assets/gira a la izquierda.jpeg",
+  "➡️": "assets/gira a la derecha.jpeg",
+  "🪜": "assets/bajada de rampla (2piso).jpeg",
+};
 
 const LUGARES_ELIMINADOS = [
   "biblioteca","taller_manualidades","laboratorio2","almacen_pedagogico",
@@ -437,12 +464,18 @@ function guardarRutas(data){ try{ localStorage.setItem(RUTAS_KEY,JSON.stringify(
 
 function cargarFotos(){ try{ const g=localStorage.getItem(FOTOS_KEY); if(g) return JSON.parse(g); }catch(e){} return {}; }
 function guardarFotos(data){ try{ localStorage.setItem(FOTOS_KEY,JSON.stringify(data)); }catch(e){} }
-function getFoto(nodeId){ return FOTOS[nodeId]||null; }
+function getFoto(nodeId){ return FOTOS[nodeId]||FOTOS_BASE_POR_NODO[nodeId]||null; }
 function cargarFotosRuta(){ try{ const g=localStorage.getItem(FOTOS_RUTA_KEY); if(g) return JSON.parse(g); }catch(e){} return {}; }
 function guardarFotosRuta(data){ try{ localStorage.setItem(FOTOS_RUTA_KEY,JSON.stringify(data)); }catch(e){} }
 function claveFotoRuta(origenId, destinoNodeId, pasoNodeId){ return `${origenId}__${destinoNodeId}__${pasoNodeId}`; }
-function getFotoRuta(origenId, destinoNodeId, pasoNodeId){
-  return FOTOS_RUTA[claveFotoRuta(origenId,destinoNodeId,pasoNodeId)] || getFoto(pasoNodeId) || null;
+function getFotoRuta(origenId, destinoNodeId, pasoNodeId, instruccion){
+  const fotoNodo=getFoto(pasoNodeId);
+  return FOTOS_RUTA[claveFotoRuta(origenId,destinoNodeId,pasoNodeId)]
+    || (pasoNodeId===origenId ? FOTOS_BASE_POR_SALIDA[origenId] : null)
+    || (["escaleras_izq","escaleras_principales","pasillo_piso2"].includes(pasoNodeId) ? fotoNodo : null)
+    || FOTOS_BASE_POR_GIRO[instruccion?.ic]
+    || fotoNodo
+    || null;
 }
 
 function obtenerDirectorioDocentes(){
@@ -947,7 +980,7 @@ const views = {
     const total=state.pasos.length;
     const nodeId=state.caminoIds?.[state.pasoActual];
     const destinoNodeId=SALONES[state.salonBuscado]?.nodeId;
-    const foto=nodeId?getFotoRuta(state.origenId,destinoNodeId,nodeId):null;
+    const foto=nodeId?getFotoRuta(state.origenId,destinoNodeId,nodeId,p):null;
     return `
     <div class="arrow-scene fade">
       <div class="progress-label">PASO ${state.pasoActual+1} DE ${total}</div>
