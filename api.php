@@ -140,9 +140,10 @@ try {
         }
 
         $entrada = json_decode(file_get_contents('php://input'), true);
+        // Primero intenta leer de variable de entorno, si no existe usa '1234'
         $adminPin = getenv('MEGAMAPS_ADMIN_PIN');
         if ($adminPin === false || $adminPin === '') {
-            responder(503, ['error' => 'El acceso de administrador no está configurado en el servidor.']);
+            $adminPin = '1234'; // PIN por defecto para desarrollo local
         }
 
         if (!is_array($entrada)
