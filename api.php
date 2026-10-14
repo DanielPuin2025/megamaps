@@ -244,7 +244,7 @@ try {
                 }
             }
 
-            responder(200, ['rutas' => $rutas]);
+            responder(200, ['rutas' => (object) $rutas]);
         }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
