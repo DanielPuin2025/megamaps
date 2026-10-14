@@ -1,0 +1,24 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Database and private application data
+*.sqlite
+*.sqlite-*
+*.db
+/datos_salones_seed.json
+/crear_base_datos.py
+/server.py
+/requirements.txt
+/fotos/
+/data/
+
+# Backups and generated/duplicated workspaces
+/megamaps-correjido/
+/megamaps-correjido.zip
+/.vscode/
+/.xgrok/
+/AGENTS.md
+/__pycache__/
+*.py[cod]
