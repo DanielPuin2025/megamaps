@@ -1,4 +1,4 @@
-const CACHE = "megamaps-v9-assets";
+const CACHE = "megamaps-v10-assets";
 const ARCHIVOS = [
   "./",
   "./index.html",
