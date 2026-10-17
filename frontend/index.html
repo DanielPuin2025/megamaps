@@ -553,8 +553,32 @@ function getFoto(nodeId){ return FOTOS[nodeId]||null; }
 function cargarFotosRuta(){ try{ const g=localStorage.getItem(FOTOS_RUTA_KEY); if(g) return JSON.parse(g); }catch(e){} return {}; }
 function guardarFotosRuta(data){ try{ localStorage.setItem(FOTOS_RUTA_KEY,JSON.stringify(data)); }catch(e){} }
 function claveFotoRuta(origenId, destinoNodeId, pasoNodeId){ return `${origenId}__${destinoNodeId}__${pasoNodeId}`; }
+const FOTO_PASO_PATRONES={
+  cafeteria:[/cafeteria/],
+  coordinacion:[/coordinacion/],
+  restaurante:[/restuarante|restaurante/],
+  biblioteca:[/biblioteca/],
+  transicion:[/transicion/],
+  cancha_central:[/cancha/],
+  escaleras_izq:[/escaleras/],
+  escaleras_principales:[/escaleras/],
+  pasillo_piso2:[/rampla/]
+};
+// Las fotos del servidor llegan como foto_001..foto_025; se asignan al paso por el nombre del archivo.
+function fotoPorNombreDeArchivo(origenId, destinoNodeId, pasoNodeId){
+  const patrones=FOTO_PASO_PATRONES[pasoNodeId];
+  if(!patrones) return null;
+  const prefijo=`${origenId}__${destinoNodeId}__foto_`;
+  const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  for(const [clave,ruta] of Object.entries(FOTOS_RUTA)){
+    if(!clave.startsWith(prefijo)||typeof ruta!=='string') continue;
+    const nombre=norm(decodeURIComponent(ruta.split('/').pop()));
+    if(patrones.some(p=>p.test(nombre))) return ruta;
+  }
+  return null;
+}
 function getFotoRuta(origenId, destinoNodeId, pasoNodeId){
-  return FOTOS_RUTA[claveFotoRuta(origenId,destinoNodeId,pasoNodeId)] || getFoto(pasoNodeId) || null;
+  return FOTOS_RUTA[claveFotoRuta(origenId,destinoNodeId,pasoNodeId)] || getFoto(pasoNodeId) || fotoPorNombreDeArchivo(origenId,destinoNodeId,pasoNodeId) || null;
 }
 
 async function sincronizarFotosRutaServidor(subirLocales=false){
