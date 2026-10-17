@@ -1,85 +1,54 @@
-# MEGA MAPS — Megacolegio El Progreso
+# MEGA MAPS
 
-Aplicativo web de navegación y búsqueda de salones para el Megacolegio El Progreso, Yopal, Casanare.
+Aplicación web para localizar salones y consultar rutas dentro del Megacolegio El Progreso, Yopal.
 
-## 📱 Cómo usar
+## Componentes del proyecto
 
-1. **Abre `index.html`** en cualquier navegador (desktop o mobile); para compartir rutas editadas, sirve el proyecto mediante Apache/XAMPP y abre su dirección `http://localhost/...`
-2. La aplicación funciona **sin internet** (offline)
-3. Los datos locales se guardan en **localStorage**; las rutas personalizadas pueden compartirse entre navegadores mediante PHP y SQLite cuando se usa Apache/XAMPP
+### Frontend — HTML, CSS y JavaScript
 
-## 🎯 Modos
+Ubicación: [`frontend/`](./frontend/)
 
-### Usuario
-- Selecciona tu ubicación actual
-- Busca un salón por número o nombre de docente
-- Recibe ruta paso a paso con fotos reales
-- Ve información de docentes, grados y áreas
+- [`index.html`](./frontend/index.html): estructura de la aplicación, estilos principales y modal del equipo.
+- [`style.css`](./frontend/style.css): estilos visuales generales.
+- [`script.js`](./frontend/script.js): navegación, búsqueda de salones, panel administrativo, rutas, fotos, sincronización con el backend y almacenamiento local.
+- [`nodos.js`](./frontend/nodos.js) y [`aristas.js`](./frontend/aristas.js): nodos y conexiones del mapa para calcular recorridos.
+- [`sitios.js`](./frontend/sitios.js): lugares de origen disponibles.
+- [`sw.js`](./frontend/sw.js): funcionamiento offline y caché de recursos.
+- `assets/`: planos, fotos de salones, fotos de rutas, íconos e imágenes de los integrantes.
 
-### Administrador
-- En modo archivo local (`file://`), el PIN de demostración es `1234`.
-- En el servidor, el PIN se configura en `MEGAMAPS_ADMIN_PIN`; no se usa el PIN de demostración.
-- Gestiona salones y docentes
-- Gestiona fotos por salón y por ruta
-- Sube fotos JPEG de salones desde «Gestionar fotos de rutas» en el servidor con PHP y SQLite (requiere XAMPP/Apache)
-- Guarda los cambios de salones y docentes en SQLite para compartirlos entre navegadores cuando se usa XAMPP
-- Consulta las zonas y los profesores con el asistente de voz; puede leer en voz alta los pasos de navegación
-- La guía de voz prefiere voces femeninas en español disponibles en el dispositivo y acompaña las instrucciones con mensajes motivadores
-- Selecciona uno de los 5 lugares de inicio y visualiza el paso a paso completo
-- Sube o cambia la foto de cada paso; las fotos quedan guardadas para esa ruta
-- Edita rutas personalizadas
+Funciones: buscar salones, mostrar docentes y jornadas, calcular rutas, visualizar pasos y fotos, guardar rutas personalizadas y administrar salones.
 
-## 🏢 Estructura
+### Backend — PHP y Flask/Python
 
-- **31 salones** (101-118, 201-215)
-- **40+ espacios** mapeados
-- **Grafo BFS** para cálculo automático de rutas
-- **5 zonas principales** con fotos reales
+Ubicación: [`backend/`](./backend/)
 
-## 📊 Datos
+- [`api.php`](./backend/api.php): API principal actual. Usa PHP, PDO y SQLite para consultar y guardar salones, rutas personalizadas y fotos de recorridos. También valida datos y protege operaciones administrativas.
+- [`server.py`](./backend/server.py): servidor alternativo o legado en Python con Flask, Flask-CORS y SQLite. Expone endpoints para salones, rutas, sitios y estado del servicio.
+- [`requirements.txt`](./backend/requirements.txt): dependencias del servidor Flask.
 
-- Docentes, grados y áreas actualizados
-- Pisos 1 y 2
-- Planos del colegio
-- Fotos de entrada, cafetería, transición, coordinación y biblioteca
+La aplicación usa principalmente `api.php`; Flask sirve como alternativa para una API Python independiente.
 
-## ⚙️ Tecnología
+### Base de datos — SQLite y SQL
 
-- HTML + CSS + JavaScript, PHP y SQLite
-- Sin dependencias de JavaScript
-- Responsive (desktop y mobile)
+Ubicación: [`base de datos/`](./base%20de%20datos/)
 
-## 🚀 Despliegue en EasyPanel
+- `megamaps.sqlite`: salones, profesores, asignaturas y relaciones.
+- `fotos_rutas_personalidas.sqlite`: fotos asociadas a pasos de rutas personalizadas.
+- [`schema.sql`](./base%20de%20datos/schema.sql): tablas, claves foráneas, índices y vistas.
+- [`datos_salones_seed.json`](./base%20de%20datos/datos_salones_seed.json): datos iniciales de salones.
+- [`crear_base_datos.py`](./base%20de%20datos/crear_base_datos.py): creación o preparación de la base.
 
-El despliegue usa el `Dockerfile` de la raíz, PHP 8.3 con Apache y SQLite. En
-EasyPanel crea una aplicación desde el repositorio de GitHub, usa la rama
-`main`, el directorio raíz `/` y publica el puerto de contenedor `80`.
+La base organiza salones, profesores, asignaturas, jornadas mañana/tarde, docentes itinerantes y sus relaciones.
 
-Configura estas variables en EasyPanel (no guardes valores reales en Git):
+## Ejecución local
 
-```text
-MEGAMAPS_DATA_DIR=/data
-MEGAMAPS_PHOTOS_DIR=/data/fotos
-MEGAMAPS_ADMIN_PIN=<un secreto aleatorio largo>
-```
+Para usar solo la interfaz, abre [`frontend/index.html`](./frontend/index.html). Para sincronizar cambios entre dispositivos, sirve el proyecto con Apache/XAMPP, PHP y PDO SQLite habilitados.
 
-Agrega almacenamiento persistente con punto de montaje `/data`. Allí quedan
-SQLite y las fotos subidas; Apache publica las fotos mediante `/fotos/`.
-Mantén una sola instancia de la aplicación porque SQLite no está diseñado para
-que varias réplicas escriban simultáneamente sobre un volumen local.
+Como alternativa, instala [`backend/requirements.txt`](./backend/requirements.txt) y ejecuta `python backend/server.py`.
 
-Después de desplegar, verifica `https://tu-dominio/api.php?action=health` y
-prueba editar un salón, cerrar sesión, volver a abrir la aplicación y confirmar
-que el cambio continúa visible. Configura un dominio con HTTPS antes de usar
-el administrador en Internet.
+## Documentación adicional
 
-El repositorio puede ser público y contiene nombres que la aplicación muestra
-como parte del directorio escolar. La base SQLite, el JSON de origen con datos
-de docentes, las fotos cargadas, archivos `.env` y respaldos quedan excluidos
-de Git. Para migrar una base existente, transfiérela directamente al volumen
-persistente de EasyPanel como `/data/megamaps.sqlite`; no la subas al repositorio.
-
----
-
-**Proyecto SENA** — Técnica en programación de software
-**Megacolegio El Progreso** — Yopal, Casanare, Colombia
+- [`COMO_ACTIVAR_LA_BASE_DE_DATOS.md`](./COMO_ACTIVAR_LA_BASE_DE_DATOS.md)
+- [`COMO_USAR_SQLITE_DESDE_PHP.md`](./COMO_USAR_SQLITE_DESDE_PHP.md)
+- [`COMO_FUNCIONA_SIN_INTERNET.md`](./COMO_FUNCIONA_SIN_INTERNET.md)
+- [`COMO_INSTALAR_EN_CELULAR.md`](./COMO_INSTALAR_EN_CELULAR.md)

@@ -1,25 +1,19 @@
-# Local environment and secrets
+# Entorno local y secretos
 .env
 .env.*
 !.env.example
 
-# Database and private application data
+# Bases de datos: solo las iniciales de "base de datos/" viajan en Git
 *.sqlite
-!/docker/seed/*.sqlite
+!/base de datos/megamaps.sqlite
+!/base de datos/fotos_rutas_personalidas.sqlite
 *.sqlite-*
 *.db
-/datos_salones_seed.json
-/crear_base_datos.py
-/server.py
-/requirements.txt
+
 /fotos/
 /data/
-
-# Backups and generated/duplicated workspaces
-/megamaps-correjido/
-/megamaps-correjido.zip
 /.vscode/
 /.xgrok/
-/AGENTS.md
-/__pycache__/
+__pycache__/
 *.py[cod]
+*.zip
