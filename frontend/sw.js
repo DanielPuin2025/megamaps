@@ -1,4 +1,4 @@
-const CACHE = "megamaps-v12-assets";
+const CACHE = "megamaps-v13-assets";
 const ARCHIVOS = [
   "./",
   "./index.html",
@@ -34,6 +34,17 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const pathname = new URL(e.request.url).pathname;
   if (e.request.method !== "GET" || pathname.endsWith("/api.php") || pathname.endsWith("/guardar_foto.php")) return;
+  // HTML/JS/CSS: red primero para que las actualizaciones se vean al instante.
+  if (e.request.mode === "navigate" || /\.(html|js|css)$/.test(pathname)) {
+    e.respondWith(
+      fetch(e.request).then((res) => {
+        const copia = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copia));
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(
       (cached) =>
