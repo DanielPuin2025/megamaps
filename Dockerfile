@@ -10,6 +10,8 @@ WORKDIR /var/www/html
 
 COPY --chown=www-data:www-data index.html api.php database.php guardar_foto.php manifest.json schema.sql script.js style.css subir_foto.html sw.js /var/www/html/
 COPY --chown=www-data:www-data assets/ /var/www/html/assets/
+COPY --chown=www-data:www-data assests/ /var/www/html/assests/
+COPY docker/seed/ /opt/megamaps-seed/
 COPY docker/apache-megamaps.conf /etc/apache2/conf-available/megamaps.conf
 COPY docker/php.ini /usr/local/etc/php/conf.d/megamaps.ini
 COPY docker/entrypoint.sh /usr/local/bin/megamaps-entrypoint
@@ -20,7 +22,8 @@ RUN a2enconf megamaps \
     && chown -R www-data:www-data /data
 
 ENV MEGAMAPS_DATA_DIR=/data \
-    MEGAMAPS_PHOTOS_DIR=/data/fotos
+    MEGAMAPS_PHOTOS_DIR=/data/fotos \
+    MEGAMAPS_SEED_DIR=/opt/megamaps-seed
 
 EXPOSE 80
 

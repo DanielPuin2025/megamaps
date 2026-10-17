@@ -5,6 +5,7 @@
 
 # Database and private application data
 *.sqlite
+!/docker/seed/*.sqlite
 *.sqlite-*
 *.db
 /datos_salones_seed.json

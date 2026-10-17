@@ -53,3 +53,22 @@ function megamaps_get_pdo(): PDO
 
     return $pdo;
 }
+
+function megamaps_get_route_photos_pdo(): PDO
+{
+    $name = 'fotos_rutas_personalidas.sqlite';
+    $path = rtrim(megamaps_data_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $name;
+
+    if (!is_file($path)) {
+        $seedDir = getenv('MEGAMAPS_SEED_DIR');
+        $seed = ($seedDir === false || $seedDir === '' ? __DIR__ . DIRECTORY_SEPARATOR . 'docker' . DIRECTORY_SEPARATOR . 'seed' : $seedDir)
+            . DIRECTORY_SEPARATOR . $name;
+        if (is_file($seed) && !copy($seed, $path)) {
+            throw new RuntimeException('No se pudo copiar la base de fotos de rutas al almacenamiento persistente.');
+        }
+    }
+
+    $pdo = new PDO('sqlite:' . $path);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    return $pdo;
+}

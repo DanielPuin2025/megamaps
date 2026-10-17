@@ -1,4 +1,4 @@
-const CACHE = "megamaps-v8-easypanel";
+const CACHE = "megamaps-v9-fotos-rutas";
 const ARCHIVOS = [
   "./",
   "./index.html",
