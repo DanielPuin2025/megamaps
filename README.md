@@ -46,6 +46,16 @@ Para usar solo la interfaz, abre [`frontend/index.html`](./frontend/index.html).
 
 Como alternativa, instala [`backend/requirements.txt`](./backend/requirements.txt) y ejecuta `python backend/server.py`.
 
+## Despliegue con Docker
+
+La aplicación incluye configuración Docker para producción:
+
+- [`Dockerfile`](./Dockerfile): imagen PHP 8.3 + Apache + SQLite
+- [`docker-compose.yml`](./docker-compose.yml): orquestación con restart automático y volumen persistente
+- [`CONFIGURACION_EASYPANEL.md`](./CONFIGURACION_EASYPANEL.md): **guía para solucionar problemas de reinicio en EasyPanel**
+
+**Problema común**: Si la aplicación queda en amarillo (unhealthy) después de cerrar EasyPanel o reiniciar el servidor, revisa [`CONFIGURACION_EASYPANEL.md`](./CONFIGURACION_EASYPANEL.md) para configurar correctamente la política de reinicio automático.
+
 ## Documentación adicional
 
 - [`COMO_ACTIVAR_LA_BASE_DE_DATOS.md`](./COMO_ACTIVAR_LA_BASE_DE_DATOS.md)
