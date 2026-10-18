@@ -1,0 +1,42 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║  SOLUCIÓN RÁPIDA: Aplicación en amarillo después de cerrar EasyPanel ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+PROBLEMA:
+  La aplicación megamaps queda en estado amarillo (unhealthy) cada vez
+  que cierras EasyPanel o apagas el equipo.
+
+CAUSA:
+  Falta configurar la política de reinicio automático en EasyPanel.
+
+SOLUCIÓN EN 5 PASOS:
+┌──────────────────────────────────────────────────────────────────────┐
+│ 1. Ve a tu proyecto megamaps en EasyPanel                            │
+│ 2. Haz clic en Settings (Configuración) del servicio                 │
+│ 3. Busca "Restart Policy" y selecciona: ALWAYS                       │
+│ 4. Verifica que exista un volumen montado en: /data                  │
+│ 5. Guarda cambios y redeploy                                         │
+└──────────────────────────────────────────────────────────────────────┘
+
+CONFIGURACIÓN REQUERIDA:
+
+  ✓ Restart Policy:    always (o unless-stopped)
+  ✓ Volumen:           /data → megamaps-data (persistente)
+  ✓ Puerto interno:    80
+  ✓ Variables de entorno:
+      MEGAMAPS_DATA_DIR=/data
+      MEGAMAPS_ADMIN_PIN=tu-pin-secreto
+
+VERIFICACIÓN:
+  Después de aplicar los cambios:
+  1. Cierra EasyPanel o reinicia el servidor
+  2. Espera 30-60 segundos
+  3. La aplicación debe volver a verde automáticamente
+
+DOCUMENTACIÓN COMPLETA:
+  Ver archivo: CONFIGURACION_EASYPANEL.md
+
+¿NECESITAS MÁS AYUDA?
+  - Revisa los logs del contenedor en EasyPanel
+  - Verifica que el volumen /data tenga permisos correctos
+  - Asegúrate de que el puerto 80 esté disponible
