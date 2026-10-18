@@ -19,6 +19,20 @@ php /usr/local/share/megamaps-migrar-rutas.php "$DATA/fotos_rutas_personalidas.s
 chown -R www-data:www-data "$DATA"
 chmod 0770 "$DATA"
 
+# Verificar que las bases de datos sean accesibles antes de iniciar Apache
+echo "Verificando bases de datos..."
+if [ -f "$DATA/megamaps.sqlite" ]; then
+    echo "✓ megamaps.sqlite encontrada"
+else
+    echo "⚠ Advertencia: megamaps.sqlite no encontrada en $DATA"
+fi
+
+if [ -f "$DATA/fotos_rutas_personalidas.sqlite" ]; then
+    echo "✓ fotos_rutas_personalidas.sqlite encontrada"
+else
+    echo "⚠ Advertencia: fotos_rutas_personalidas.sqlite no encontrada en $DATA"
+fi
+
 # El codigo espera "base de datos/" junto a backend/ y frontend/, y backend/fotos/.
 ln -sfn "$DATA" "$WEB/base de datos"
 ln -sfn "$DATA/fotos" "$WEB/backend/fotos"

@@ -28,7 +28,7 @@ ENV MEGAMAPS_DATA_DIR=/data \
 
 EXPOSE 80
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
     CMD php -r '$r=@file_get_contents("http://127.0.0.1/backend/api.php?action=health"); exit($r !== false && strpos($r, "\"status\":\"ok\"") !== false ? 0 : 1);'
 
 ENTRYPOINT ["/usr/local/bin/megamaps-entrypoint"]

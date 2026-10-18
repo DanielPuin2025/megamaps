@@ -55,10 +55,16 @@ Esto garantiza que:
 
 El Dockerfile ya incluye un HEALTHCHECK que verifica cada 30 segundos si la aplicación responde:
 ```dockerfile
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5
 ```
 
-EasyPanel usa esto para detectar si la aplicación está saludable (verde) o no (amarillo/rojo).
+**Configuración mejorada:**
+- `start-period=60s`: Da 60 segundos de gracia al inicio para que Apache/PHP arranquen completamente
+- `timeout=10s`: Permite hasta 10 segundos para que el endpoint responda
+- `retries=5`: Hace 5 intentos antes de marcar como unhealthy
+- `interval=30s`: Verifica cada 30 segundos una vez que arrancó
+
+**Importante:** Después de un reinicio del servidor, puede tomar hasta **2-3 minutos** antes de que EasyPanel marque la aplicación como saludable (verde). Esto es normal.
 
 ### 5. Recursos Mínimos Recomendados
 

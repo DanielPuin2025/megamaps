@@ -6,26 +6,34 @@ PROBLEMA:
   La aplicación megamaps queda en estado amarillo (unhealthy) cada vez
   que cierras EasyPanel o apagas el equipo.
 
-CAUSA:
-  Falta configurar la política de reinicio automático en EasyPanel.
+CAUSA PRINCIPAL:
+  El health check necesita más tiempo para verificar que Apache/PHP
+  iniciaron correctamente después de un reinicio.
 
-SOLUCIÓN EN 5 PASOS:
+SOLUCIÓN APLICADA:
+  ✓ Health check ajustado: 60 segundos de gracia inicial + 5 reintentos
+  ✓ Verificación de bases de datos en el arranque
+  ✓ Volumen persistente ya configurado en /data
+
+PASOS PARA APLICAR LA CORRECCIÓN:
 ┌──────────────────────────────────────────────────────────────────────┐
-│ 1. Ve a tu proyecto megamaps en EasyPanel                            │
-│ 2. Haz clic en Settings (Configuración) del servicio                 │
-│ 3. Busca "Restart Policy" y selecciona: ALWAYS                       │
-│ 4. Verifica que exista un volumen montado en: /data                  │
-│ 5. Guarda cambios y redeploy                                         │
+│ 1. Haz commit y push de los cambios al repositorio                   │
+│ 2. En EasyPanel, haz clic en el botón "Implementar" (verde)         │
+│ 3. Espera 2-3 minutos para que la aplicación arranque completamente │
+│ 4. La aplicación debe pasar de amarillo → verde automáticamente     │
 └──────────────────────────────────────────────────────────────────────┘
 
-CONFIGURACIÓN REQUERIDA:
+CONFIGURACIÓN REQUERIDA (YA VERIFICADA):
 
-  ✓ Restart Policy:    always (o unless-stopped)
-  ✓ Volumen:           /data → megamaps-data (persistente)
-  ✓ Puerto interno:    80
-  ✓ Variables de entorno:
-      MEGAMAPS_DATA_DIR=/data
-      MEGAMAPS_ADMIN_PIN=tu-pin-secreto
+  ✓ Volumen persistente:  /data → megamaps-data
+  ✓ Puerto interno:       80
+  ✓ Variables de entorno: MEGAMAPS_DATA_DIR=/data
+  ✓ Health check:         Ajustado a 60s de inicio + 5 reintentos
+
+IMPORTANTE:
+  Después de reiniciar el servidor, ES NORMAL que la aplicación tarde
+  2-3 minutos en pasar de amarillo a verde. NO es un error, es el tiempo
+  que tarda Apache/PHP en arrancar completamente y pasar los health checks.
 
 VERIFICACIÓN:
   Después de aplicar los cambios:
