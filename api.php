@@ -1,6 +1,9 @@
 <?php
 // API PHP para consultar datos y sincronizar rutas personalizadas de MegaMaps.
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 $https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
 session_set_cookie_params([
@@ -262,6 +265,10 @@ try {
         }
         session_destroy();
         responder(200, ['ok' => true]);
+    }
+
+    if ($accion === 'check-session') {
+        responder(200, ['authenticated' => !empty($_SESSION['megamaps_admin'])]);
     }
 
     if ($accion === 'salones') {

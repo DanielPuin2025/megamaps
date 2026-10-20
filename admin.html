@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Panel de Administrador · MegaMaps</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -20,12 +23,35 @@
       margin: 0 auto;
     }
 
+    .login-card {
+      max-width: 400px;
+      margin: 100px auto;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .login-card h1 {
+      font-size: 28px;
+      color: #667eea;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .admin-content {
+      display: none;
+    }
+
     header {
       background: rgba(255, 255, 255, 0.95);
       padding: 24px;
       border-radius: 16px;
       margin-bottom: 24px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     h1 {
@@ -73,7 +99,9 @@
       color: #333;
     }
 
-    select, input[type="file"] {
+    input[type="password"],
+    select,
+    input[type="file"] {
       width: 100%;
       min-height: 48px;
       padding: 12px 16px;
@@ -84,7 +112,7 @@
       transition: all 0.3s ease;
     }
 
-    select:focus, input[type="file"]:focus {
+    input:focus, select:focus {
       outline: none;
       border-color: #667eea;
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -117,6 +145,37 @@
       opacity: 0.6;
       cursor: not-allowed;
       transform: none;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: #667eea;
+      border: 2px solid #667eea;
+      min-height: 44px;
+    }
+
+    .btn-secondary:hover {
+      background: #f5f7ff;
+    }
+
+    .error-msg {
+      color: #d32f2f;
+      background: #ffebee;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .success-msg {
+      color: #2e7d32;
+      background: #e8f5e9;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 14px;
+      display: none;
     }
 
     .file-info {
@@ -156,70 +215,14 @@
       font-size: 14px;
     }
 
-    .gallery {
-      background: rgba(255, 255, 255, 0.95);
-      padding: 28px;
-      border-radius: 16px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    }
-
-    .gallery h2 {
-      font-size: 22px;
-      margin-bottom: 20px;
-      color: #667eea;
-    }
-
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 16px;
-    }
-
-    .gallery-item {
-      aspect-ratio: 1;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-
-    .gallery-item:hover {
-      transform: scale(1.05);
-    }
-
-    .gallery-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .links {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-top: 20px;
-    }
-
-    .links a {
-      color: #667eea;
-      text-decoration: none;
-      font-weight: 600;
-      transition: color 0.2s ease;
-    }
-
-    .links a:hover {
-      color: #764ba2;
-    }
-
     .notice {
       margin-top: 16px;
       padding: 16px;
-      background: #fff3cd;
-      border: 1px solid #ffeeba;
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
       border-radius: 8px;
       font-size: 13px;
-      color: #856404;
+      color: #1565c0;
     }
 
     @media (max-width: 768px) {
@@ -234,18 +237,54 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <!-- Login Screen -->
+  <div id="loginScreen" class="login-card">
+    <h1>🔐 Acceso Administrador</h1>
+    <p style="text-align: center; color: #666; margin-bottom: 24px;">
+      Ingresa el PIN para acceder al panel
+    </p>
+
+    <form id="loginForm">
+      <label for="pin">PIN de Administrador</label>
+      <input
+        type="password"
+        id="pin"
+        name="pin"
+        placeholder="Ingresa 1234"
+        required
+        autocomplete="off"
+      >
+
+      <button type="submit" id="loginBtn">Iniciar Sesión</button>
+
+      <div id="loginError" class="error-msg"></div>
+    </form>
+
+    <div style="margin-top: 24px; text-align: center;">
+      <a href="index.html" style="color: #667eea; text-decoration: none;">
+        ← Volver a MegaMaps
+      </a>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="adminPanel" class="container admin-content">
     <header>
-      <h1>🎓 Panel de Administrador</h1>
-      <p class="subtitle">Gestión de fotografías de salones - MegaMaps</p>
+      <div>
+        <h1>🎓 Panel de Administrador</h1>
+        <p class="subtitle">Gestión de fotografías de salones - MegaMaps</p>
+      </div>
+      <button class="btn-secondary" onclick="logout()" style="width: auto; padding: 0 24px;">
+        Cerrar Sesión
+      </button>
     </header>
 
     <div class="main-grid">
       <div class="card">
         <h2>📸 Subir Nueva Foto</h2>
-        <p>Selecciona un salón y carga una fotografía. No hay límite de tamaño.</p>
+        <p>Selecciona un salón y carga una fotografía.</p>
 
-        <form id="uploadForm" action="guardar_foto.php" method="post" enctype="multipart/form-data">
+        <form id="uploadForm" enctype="multipart/form-data">
           <label for="salon">Salón</label>
           <select id="salon" name="salon" required>
             <option value="">Selecciona un salón</option>
@@ -289,7 +328,7 @@
           </select>
 
           <label for="foto">Foto (JPEG, PNG o WebP)</label>
-          <input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp" required>
+          <input id="foto" name="foto" type="file" accept="image/*" required>
 
           <div id="fileInfo" class="file-info"></div>
 
@@ -298,10 +337,14 @@
           </div>
 
           <button type="submit" id="submitBtn">Subir Foto</button>
+
+          <div id="uploadError" class="error-msg"></div>
+          <div id="uploadSuccess" class="success-msg"></div>
         </form>
 
         <div class="notice">
-          ⚠️ Asegúrate de tener permisos de administrador antes de subir fotos.
+          ℹ️ Formatos aceptados: JPG, PNG, WebP<br>
+          Las fotos se guardan en fotos/salones/
         </div>
       </div>
 
@@ -312,45 +355,113 @@
         <div style="background: #f5f7fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
           <strong style="color: #667eea;">Características:</strong>
           <ul style="margin: 12px 0 0 20px; line-height: 2;">
-            <li>✅ Sin límite de tamaño de archivo</li>
-            <li>✅ Formatos soportados: JPEG, PNG, WebP</li>
+            <li>✅ Subida de fotos ilimitadas</li>
+            <li>✅ Formatos: JPEG, PNG, WebP</li>
             <li>✅ Vista previa instantánea</li>
             <li>✅ Múltiples fotos por salón</li>
             <li>✅ Almacenamiento seguro</li>
           </ul>
         </div>
 
-        <div style="background: #e8f5e9; padding: 16px; border-radius: 8px;">
+        <div style="background: #e8f5e9; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
           <strong style="color: #2e7d32;">Base de Datos:</strong>
           <p style="margin: 8px 0 0; color: #666;">
-            SQLite configurada para almacenar rutas y metadatos de todas las fotografías sin restricciones.
+            SQLite configurada para almacenar todas las fotografías.
           </p>
         </div>
 
-        <div class="links">
-          <a href="index.html">🏠 Volver a MegaMaps</a>
-          <a href="#" onclick="location.reload()">🔄 Recargar</a>
-        </div>
-      </div>
-    </div>
-
-    <div class="gallery">
-      <h2>🖼️ Galería de Fotos Recientes</h2>
-      <div id="galleryGrid" class="gallery-grid">
-        <p style="color: #999; text-align: center; grid-column: 1/-1;">
-          Cargando galería...
-        </p>
+        <button onclick="location.href='index.html'" class="btn-secondary">
+          🏠 Volver a MegaMaps
+        </button>
       </div>
     </div>
   </div>
 
   <script>
-    // Preview de imagen
+    // Variables globales
+    const loginScreen = document.getElementById('loginScreen');
+    const adminPanel = document.getElementById('adminPanel');
+    const loginForm = document.getElementById('loginForm');
+    const uploadForm = document.getElementById('uploadForm');
     const fotoInput = document.getElementById('foto');
     const previewArea = document.getElementById('previewArea');
     const fileInfo = document.getElementById('fileInfo');
-    const submitBtn = document.getElementById('submitBtn');
 
+    // Verificar sesión al cargar
+    window.addEventListener('load', checkSession);
+
+    async function checkSession() {
+      try {
+        const response = await fetch('api.php?action=check-session');
+        const data = await response.json();
+
+        if (data.authenticated) {
+          showAdminPanel();
+        }
+      } catch (error) {
+        console.log('No hay sesión activa');
+      }
+    }
+
+    // Login
+    loginForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const pin = document.getElementById('pin').value;
+      const loginBtn = document.getElementById('loginBtn');
+      const loginError = document.getElementById('loginError');
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Verificando...';
+      loginError.style.display = 'none';
+
+      try {
+        const response = await fetch('api.php?action=admin-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ pin: pin })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.ok) {
+          showAdminPanel();
+        } else {
+          loginError.textContent = data.error || 'PIN incorrecto';
+          loginError.style.display = 'block';
+        }
+      } catch (error) {
+        loginError.textContent = 'Error de conexión. Intenta nuevamente.';
+        loginError.style.display = 'block';
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Iniciar Sesión';
+      }
+    });
+
+    // Logout
+    async function logout() {
+      try {
+        await fetch('api.php?action=admin-logout', {
+          method: 'POST'
+        });
+      } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+      }
+
+      loginScreen.style.display = 'block';
+      adminPanel.style.display = 'none';
+      document.getElementById('pin').value = '';
+    }
+
+    function showAdminPanel() {
+      loginScreen.style.display = 'none';
+      adminPanel.style.display = 'block';
+    }
+
+    // Preview de imagen
     fotoInput.addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) {
@@ -377,21 +488,58 @@
       reader.readAsDataURL(file);
     });
 
-    // Validación del formulario
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    // Subir foto
+    uploadForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      const uploadError = document.getElementById('uploadError');
+      const uploadSuccess = document.getElementById('uploadSuccess');
+
       submitBtn.disabled = true;
       submitBtn.textContent = 'Subiendo...';
+      uploadError.style.display = 'none';
+      uploadSuccess.style.display = 'none';
+
+      const formData = new FormData(uploadForm);
+
+      try {
+        const response = await fetch('guardar_foto.php', {
+          method: 'POST',
+          body: formData
+        });
+
+        const text = await response.text();
+
+        if (response.ok && text.includes('Foto guardada')) {
+          uploadSuccess.textContent = '¡Foto subida exitosamente!';
+          uploadSuccess.style.display = 'block';
+
+          // Limpiar formulario
+          uploadForm.reset();
+          previewArea.innerHTML = '<div class="preview-placeholder">Vista previa aparecerá aquí</div>';
+          fileInfo.classList.remove('show');
+
+          // Recargar después de 2 segundos
+          setTimeout(() => {
+            location.reload();
+          }, 2000);
+        } else {
+          // Extraer mensaje de error del HTML
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(text, 'text/html');
+          const errorText = doc.querySelector('p')?.textContent || 'Error al subir la foto';
+          uploadError.textContent = errorText;
+          uploadError.style.display = 'block';
+        }
+      } catch (error) {
+        uploadError.textContent = 'Error de conexión. Verifica tu conexión e intenta nuevamente.';
+        uploadError.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Subir Foto';
+      }
     });
-
-    // Cargar galería de fotos (simulado)
-    function loadGallery() {
-      // Aquí se pueden cargar las fotos desde la base de datos vía API
-      // Por ahora mostramos un mensaje
-      const galleryGrid = document.getElementById('galleryGrid');
-      galleryGrid.innerHTML = '<p style="color: #999; text-align: center; grid-column: 1/-1;">La galería se actualizará después de subir fotos.</p>';
-    }
-
-    window.addEventListener('load', loadGallery);
   </script>
 </body>
 </html>

@@ -1,7 +1,11 @@
 <?php
 declare(strict_types=1);
 
+// Headers anti-caché
 header('Content-Type: text/html; charset=utf-8');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 $https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
 session_set_cookie_params([
@@ -86,11 +90,30 @@ try {
     }
     // Límite de tamaño removido para permitir archivos de cualquier tamaño
 
-    $informacionImagen = getimagesize($foto['tmp_name']);
-    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($foto['tmp_name']);
-    $tiposImagen = [IMAGETYPE_JPEG => 'image/jpeg', IMAGETYPE_PNG => 'image/png', IMAGETYPE_WEBP => 'image/webp'];
-    if ($informacionImagen === false || !isset($tiposImagen[$informacionImagen[2]]) || $mime !== $tiposImagen[$informacionImagen[2]]) {
-        throw new RuntimeException('El archivo seleccionado no es una imagen JPEG, PNG o WebP válida.');
+    // Validación mejorada y más flexible de imágenes
+    $informacionImagen = @getimagesize($foto['tmp_name']);
+    $mime = @(new finfo(FILEINFO_MIME_TYPE))->file($foto['tmp_name']);
+
+    // Tipos permitidos con validación flexible
+    $tiposPermitidos = [
+        'image/jpeg', 'image/jpg', 'image/pjpeg',
+        'image/png', 'image/x-png',
+        'image/webp'
+    ];
+
+    // Extensiones permitidas
+    $extension = strtolower(pathinfo($foto['name'] ?? '', PATHINFO_EXTENSION));
+    $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'webp'];
+
+    // Validar que sea una imagen válida (con al menos una verificación exitosa)
+    $esImagenValida = (
+        $informacionImagen !== false ||
+        in_array($mime, $tiposPermitidos, true) ||
+        in_array($extension, $extensionesPermitidas, true)
+    );
+
+    if (!$esImagenValida) {
+        throw new RuntimeException('El archivo debe ser una imagen válida (JPEG, PNG o WebP).');
     }
 
     $baseFotos = __DIR__ . DIRECTORY_SEPARATOR . 'fotos';
@@ -120,7 +143,20 @@ try {
          ON fotos_salones (salon_numero)'
     );
 
-    $nombreArchivo = 'salon-' . $salon . '-' . bin2hex(random_bytes(16)) . '.jpg';
+    // Determinar extensión correcta basada en el tipo de archivo
+    $extensionFinal = 'jpg'; // Por defecto
+    if ($informacionImagen !== false) {
+        $extensiones = [
+            IMAGETYPE_JPEG => 'jpg',
+            IMAGETYPE_PNG => 'png',
+            IMAGETYPE_WEBP => 'webp'
+        ];
+        $extensionFinal = $extensiones[$informacionImagen[2]] ?? $extension ?? 'jpg';
+    } elseif (in_array($extension, $extensionesPermitidas, true)) {
+        $extensionFinal = $extension;
+    }
+
+    $nombreArchivo = 'salon-' . $salon . '-' . bin2hex(random_bytes(16)) . '.' . $extensionFinal;
     $archivoGuardado = $carpeta . DIRECTORY_SEPARATOR . $nombreArchivo;
     $ruta = 'fotos/salones/' . $nombreArchivo;
 
