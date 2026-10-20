@@ -1,0 +1,50 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║  SOLUCIÓN RÁPIDA: Aplicación en amarillo después de cerrar EasyPanel ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+PROBLEMA:
+  La aplicación megamaps queda en estado amarillo (unhealthy) cada vez
+  que cierras EasyPanel o apagas el equipo.
+
+CAUSA PRINCIPAL:
+  El health check necesita más tiempo para verificar que Apache/PHP
+  iniciaron correctamente después de un reinicio.
+
+SOLUCIÓN APLICADA:
+  ✓ Health check ajustado: 60 segundos de gracia inicial + 5 reintentos
+  ✓ Verificación de bases de datos en el arranque
+  ✓ Volumen persistente ya configurado en /data
+
+PASOS PARA APLICAR LA CORRECCIÓN:
+┌──────────────────────────────────────────────────────────────────────┐
+│ 1. Haz commit y push de los cambios al repositorio                   │
+│ 2. En EasyPanel, haz clic en el botón "Implementar" (verde)         │
+│ 3. Espera 2-3 minutos para que la aplicación arranque completamente │
+│ 4. La aplicación debe pasar de amarillo → verde automáticamente     │
+└──────────────────────────────────────────────────────────────────────┘
+
+CONFIGURACIÓN REQUERIDA (YA VERIFICADA):
+
+  ✓ Volumen persistente:  /data → megamaps-data
+  ✓ Puerto interno:       80
+  ✓ Variables de entorno: MEGAMAPS_DATA_DIR=/data
+  ✓ Health check:         Ajustado a 60s de inicio + 5 reintentos
+
+IMPORTANTE:
+  Después de reiniciar el servidor, ES NORMAL que la aplicación tarde
+  2-3 minutos en pasar de amarillo a verde. NO es un error, es el tiempo
+  que tarda Apache/PHP en arrancar completamente y pasar los health checks.
+
+VERIFICACIÓN:
+  Después de aplicar los cambios:
+  1. Cierra EasyPanel o reinicia el servidor
+  2. Espera 30-60 segundos
+  3. La aplicación debe volver a verde automáticamente
+
+DOCUMENTACIÓN COMPLETA:
+  Ver archivo: CONFIGURACION_EASYPANEL.md
+
+¿NECESITAS MÁS AYUDA?
+  - Revisa los logs del contenedor en EasyPanel
+  - Verifica que el volumen /data tenga permisos correctos
+  - Asegúrate de que el puerto 80 esté disponible

@@ -1,0 +1,6 @@
+﻿# Dependencias del backend Flask legado
+# La aplicación web actual usa PHP (api.php), no Flask.
+flask
+flask-cors
+gunicorn
+
