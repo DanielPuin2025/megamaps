@@ -1,0 +1,22 @@
+# Configuración para permitir subida de archivos grandes sin límites
+php_value upload_max_filesize 0
+php_value post_max_size 0
+php_value max_execution_time 300
+php_value max_input_time 300
+php_value memory_limit 512M
+
+# Permitir acceso a archivos de imágenes
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    Allow from all
+</FilesMatch>
+
+# Configuración de seguridad
+<Files ".env">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files ".sqlite">
+    Order allow,deny
+    Deny from all
+</Files>

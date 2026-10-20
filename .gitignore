@@ -1,0 +1,46 @@
+# Archivos y carpetas a ignorar
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Entornos virtuales
+.venv/
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+error.log
+
+# Temporales
+*.tmp
+*.temp
+_tmp_*
+
+# Bases de datos (opcional - comentar si quieres versionar)
+# *.sqlite
+# *.db
+
+# Cache
+.uv-cache/
+__pycache__/

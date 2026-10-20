@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel de Administrador · MegaMaps</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      color: #1b2340;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    h1 {
+      font-size: 32px;
+      color: #667eea;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 16px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 28px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .card h2 {
+      font-size: 22px;
+      margin-bottom: 16px;
+      color: #667eea;
+    }
+
+    .card p {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 18px 0 8px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #333;
+    }
+
+    select, input[type="file"] {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font: inherit;
+      font-size: 15px;
+      transition: all 0.3s ease;
+    }
+
+    select:focus, input[type="file"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    button {
+      width: 100%;
+      min-height: 52px;
+      margin-top: 20px;
+      border: 0;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .file-info {
+      margin-top: 12px;
+      padding: 12px;
+      background: #f5f7fa;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #666;
+      display: none;
+    }
+
+    .file-info.show {
+      display: block;
+    }
+
+    .preview-area {
+      margin-top: 16px;
+      border: 2px dashed #e0e0e0;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-area img {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 8px;
+    }
+
+    .preview-placeholder {
+      color: #999;
+      font-size: 14px;
+    }
+
+    .gallery {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 28px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .gallery h2 {
+      font-size: 22px;
+      margin-bottom: 20px;
+      color: #667eea;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+    }
+
+    .gallery-item {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .gallery-item:hover {
+      transform: scale(1.05);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .links a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .links a:hover {
+      color: #764ba2;
+    }
+
+    .notice {
+      margin-top: 16px;
+      padding: 16px;
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #856404;
+    }
+
+    @media (max-width: 768px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎓 Panel de Administrador</h1>
+      <p class="subtitle">Gestión de fotografías de salones - MegaMaps</p>
+    </header>
+
+    <div class="main-grid">
+      <div class="card">
+        <h2>📸 Subir Nueva Foto</h2>
+        <p>Selecciona un salón y carga una fotografía. No hay límite de tamaño.</p>
+
+        <form id="uploadForm" action="guardar_foto.php" method="post" enctype="multipart/form-data">
+          <label for="salon">Salón</label>
+          <select id="salon" name="salon" required>
+            <option value="">Selecciona un salón</option>
+            <optgroup label="Piso 1">
+              <option value="101">Salón 101</option>
+              <option value="102">Salón 102</option>
+              <option value="103">Salón 103</option>
+              <option value="104">Salón 104</option>
+              <option value="105">Salón 105</option>
+              <option value="106">Salón 106</option>
+              <option value="107">Salón 107</option>
+              <option value="108">Salón 108</option>
+              <option value="109">Salón 109</option>
+              <option value="110">Salón 110</option>
+              <option value="111">Salón 111</option>
+              <option value="112">Salón 112</option>
+              <option value="113">Salón 113</option>
+              <option value="114">Salón 114</option>
+              <option value="115">Salón 115</option>
+              <option value="116">Salón 116</option>
+              <option value="117">Salón 117</option>
+              <option value="118">Salón 118</option>
+            </optgroup>
+            <optgroup label="Piso 2">
+              <option value="201">Salón 201</option>
+              <option value="202">Salón 202</option>
+              <option value="203">Salón 203</option>
+              <option value="204">Salón 204</option>
+              <option value="205">Salón 205</option>
+              <option value="206">Salón 206</option>
+              <option value="207">Salón 207</option>
+              <option value="208">Salón 208</option>
+              <option value="209">Salón 209</option>
+              <option value="210">Salón 210</option>
+              <option value="211">Salón 211</option>
+              <option value="212">Salón 212</option>
+              <option value="213">Salón 213</option>
+              <option value="214">Salón 214</option>
+              <option value="215">Salón 215</option>
+            </optgroup>
+          </select>
+
+          <label for="foto">Foto (JPEG, PNG o WebP)</label>
+          <input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp" required>
+
+          <div id="fileInfo" class="file-info"></div>
+
+          <div class="preview-area" id="previewArea">
+            <div class="preview-placeholder">Vista previa aparecerá aquí</div>
+          </div>
+
+          <button type="submit" id="submitBtn">Subir Foto</button>
+        </form>
+
+        <div class="notice">
+          ⚠️ Asegúrate de tener permisos de administrador antes de subir fotos.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📊 Información del Sistema</h2>
+        <p>Estado actual del sistema de fotografías.</p>
+
+        <div style="background: #f5f7fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+          <strong style="color: #667eea;">Características:</strong>
+          <ul style="margin: 12px 0 0 20px; line-height: 2;">
+            <li>✅ Sin límite de tamaño de archivo</li>
+            <li>✅ Formatos soportados: JPEG, PNG, WebP</li>
+            <li>✅ Vista previa instantánea</li>
+            <li>✅ Múltiples fotos por salón</li>
+            <li>✅ Almacenamiento seguro</li>
+          </ul>
+        </div>
+
+        <div style="background: #e8f5e9; padding: 16px; border-radius: 8px;">
+          <strong style="color: #2e7d32;">Base de Datos:</strong>
+          <p style="margin: 8px 0 0; color: #666;">
+            SQLite configurada para almacenar rutas y metadatos de todas las fotografías sin restricciones.
+          </p>
+        </div>
+
+        <div class="links">
+          <a href="index.html">🏠 Volver a MegaMaps</a>
+          <a href="#" onclick="location.reload()">🔄 Recargar</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="gallery">
+      <h2>🖼️ Galería de Fotos Recientes</h2>
+      <div id="galleryGrid" class="gallery-grid">
+        <p style="color: #999; text-align: center; grid-column: 1/-1;">
+          Cargando galería...
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Preview de imagen
+    const fotoInput = document.getElementById('foto');
+    const previewArea = document.getElementById('previewArea');
+    const fileInfo = document.getElementById('fileInfo');
+    const submitBtn = document.getElementById('submitBtn');
+
+    fotoInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) {
+        previewArea.innerHTML = '<div class="preview-placeholder">Vista previa aparecerá aquí</div>';
+        fileInfo.classList.remove('show');
+        return;
+      }
+
+      // Mostrar información del archivo
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      fileInfo.innerHTML = `
+        <strong>Archivo seleccionado:</strong><br>
+        Nombre: ${file.name}<br>
+        Tamaño: ${sizeMB} MB<br>
+        Tipo: ${file.type}
+      `;
+      fileInfo.classList.add('show');
+
+      // Crear preview
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        previewArea.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Validación del formulario
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Subiendo...';
+    });
+
+    // Cargar galería de fotos (simulado)
+    function loadGallery() {
+      // Aquí se pueden cargar las fotos desde la base de datos vía API
+      // Por ahora mostramos un mensaje
+      const galleryGrid = document.getElementById('galleryGrid');
+      galleryGrid.innerHTML = '<p style="color: #999; text-align: center; grid-column: 1/-1;">La galería se actualizará después de subir fotos.</p>';
+    }
+
+    window.addEventListener('load', loadGallery);
+  </script>
+</body>
+</html>

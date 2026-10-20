@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Subir foto de salÃ³n Â· MegaMaps</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      display: grid;
+      place-items: center;
+      background: #f1f4fa;
+      color: #1b2340;
+      font-family: Arial, sans-serif;
+    }
+    main {
+      width: min(100%, 460px);
+      padding: 28px;
+      border: 1px solid #e3e7f1;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 12px 32px rgba(20, 30, 70, .1);
+    }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    p { color: #626b83; line-height: 1.5; }
+    label { display: block; margin: 18px 0 7px; font-weight: 700; }
+    select, input, button {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 12px;
+      border: 1px solid #cbd2e2;
+      border-radius: 10px;
+      font: inherit;
+    }
+    button {
+      margin-top: 20px;
+      border: 0;
+      background: #22a559;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { background: #178245; }
+    .notice { margin-bottom: 0; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Subir foto de un salÃ³n</h1>
+    <p>La imagen JPEG se guardarÃ¡ en el servidor y su ruta quedarÃ¡ asociada al salÃ³n.</p>
+
+    <form action="guardar_foto.php" method="post" enctype="multipart/form-data">
+      <label for="salon">SalÃ³n</label>
+      <select id="salon" name="salon" required>
+        <option value="">Selecciona un salÃ³n</option>
+        <optgroup label="Piso 1">
+          <option value="101">SalÃ³n 101</option>
+          <option value="102">SalÃ³n 102</option>
+          <option value="103">SalÃ³n 103</option>
+          <option value="104">SalÃ³n 104</option>
+          <option value="105">SalÃ³n 105</option>
+          <option value="106">SalÃ³n 106</option>
+          <option value="107">SalÃ³n 107</option>
+          <option value="108">SalÃ³n 108</option>
+          <option value="109">SalÃ³n 109</option>
+          <option value="110">SalÃ³n 110</option>
+          <option value="111">SalÃ³n 111</option>
+          <option value="112">SalÃ³n 112</option>
+          <option value="113">SalÃ³n 113</option>
+          <option value="114">SalÃ³n 114</option>
+          <option value="115">SalÃ³n 115</option>
+          <option value="116">SalÃ³n 116</option>
+          <option value="117">SalÃ³n 117</option>
+          <option value="118">SalÃ³n 118</option>
+        </optgroup>
+        <optgroup label="Piso 2">
+          <option value="201">SalÃ³n 201</option>
+          <option value="202">SalÃ³n 202</option>
+          <option value="203">SalÃ³n 203</option>
+          <option value="204">SalÃ³n 204</option>
+          <option value="205">SalÃ³n 205</option>
+          <option value="206">SalÃ³n 206</option>
+          <option value="207">SalÃ³n 207</option>
+          <option value="208">SalÃ³n 208</option>
+          <option value="209">SalÃ³n 209</option>
+          <option value="210">SalÃ³n 210</option>
+          <option value="211">SalÃ³n 211</option>
+          <option value="212">SalÃ³n 212</option>
+          <option value="213">SalÃ³n 213</option>
+          <option value="214">SalÃ³n 214</option>
+          <option value="215">SalÃ³n 215</option>
+        </optgroup>
+      </select>
+
+      <label for="foto">Foto JPEG, PNG o WebP (sin tope de tamaño en PHP)</label>
+      <input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp" required>
+      <input type="hidden" name="MAX_FILE_SIZE" value="1073741824">
+      <button type="submit">Guardar foto</button>
+    </form>
+
+    <p class="notice">Herramienta para usar en un servidor local o protegido; no publiques el formulario sin autenticaciÃ³n.</p>
+  </main>
+</body>
+</html>
