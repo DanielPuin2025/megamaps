@@ -260,8 +260,8 @@ try {
         if (!is_array($entrada)
             || !isset($entrada['pin'])
             || !is_string($entrada['pin'])
-            || !hash_equals('1234', $entrada['pin'])) {
-            responder(401, ['error' => 'PIN de administrador incorrecto.']);
+            || $entrada['pin'] !== '1234') {
+            responder(401, ['error' => 'PIN incorrecto. Usa: 1234']);
         }
 
         session_regenerate_id(true);

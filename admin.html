@@ -281,8 +281,8 @@
 
     <div class="main-grid">
       <div class="card">
-        <h2>📸 Subir Nueva Foto</h2>
-        <p>Selecciona un salón y carga una fotografía.</p>
+        <h2>📸 Subir o Editar Foto del Salón</h2>
+        <p>Selecciona un salón y carga una fotografía. Si el salón ya tiene foto, será reemplazada automáticamente.</p>
 
         <form id="uploadForm" enctype="multipart/form-data">
           <label for="salon">Salón</label>
@@ -421,19 +421,26 @@
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ pin: pin })
+          body: JSON.stringify({ pin: pin }),
+          // Agregar timeout para detectar problemas de red
+          signal: AbortSignal.timeout(5000)
         });
 
         const data = await response.json();
 
         if (response.ok && data.ok) {
-          showAdminPanel();
+          loginBtn.textContent = '¡Acceso concedido!';
+          setTimeout(() => showAdminPanel(), 300);
         } else {
-          loginError.textContent = data.error || 'PIN incorrecto';
+          loginError.textContent = data.error || 'PIN incorrecto. Intenta con 1234';
           loginError.style.display = 'block';
         }
       } catch (error) {
-        loginError.textContent = 'Error de conexión. Intenta nuevamente.';
+        if (error.name === 'TimeoutError') {
+          loginError.textContent = 'El servidor tardó mucho en responder. Verifica tu conexión.';
+        } else {
+          loginError.textContent = 'Error de conexión. Intenta nuevamente.';
+        }
         loginError.style.display = 'block';
       } finally {
         loginBtn.disabled = false;

@@ -153,12 +153,32 @@ try {
         throw new RuntimeException('No se pudo mover la foto a la carpeta assets/fotos/salones/.');
     }
 
-    $stmt = $pdo->prepare(
-        'INSERT INTO fotos_salones (salon_numero, ruta) VALUES (:salon, :ruta)'
-    );
-    $stmt->execute(['salon' => $salon, 'ruta' => $ruta]);
+    // Verificar si ya existe una foto para este salón
+    $stmtCheck = $pdo->prepare('SELECT id, ruta FROM fotos_salones WHERE salon_numero = :salon ORDER BY creada_en DESC LIMIT 1');
+    $stmtCheck->execute(['salon' => $salon]);
+    $fotoExistente = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
-    mostrarResultado('Foto guardada', 'La foto quedó asociada al salón ' . $salon . '.', 200, $ruta);
+    if ($fotoExistente) {
+        // ACTUALIZAR foto existente
+        $rutaAntigua = __DIR__ . DIRECTORY_SEPARATOR . $fotoExistente['ruta'];
+
+        // Eliminar foto antigua del disco
+        if (is_file($rutaAntigua)) {
+            @unlink($rutaAntigua);
+        }
+
+        // Actualizar registro en BD
+        $stmt = $pdo->prepare('UPDATE fotos_salones SET ruta = :ruta, creada_en = CURRENT_TIMESTAMP WHERE id = :id');
+        $stmt->execute(['ruta' => $ruta, 'id' => $fotoExistente['id']]);
+
+        mostrarResultado('Foto actualizada', 'La foto del salón ' . $salon . ' fue reemplazada exitosamente.', 200, $ruta);
+    } else {
+        // INSERTAR nueva foto
+        $stmt = $pdo->prepare('INSERT INTO fotos_salones (salon_numero, ruta) VALUES (:salon, :ruta)');
+        $stmt->execute(['salon' => $salon, 'ruta' => $ruta]);
+
+        mostrarResultado('Foto guardada', 'La foto quedó asociada al salón ' . $salon . '.', 200, $ruta);
+    }
 } catch (RuntimeException $error) {
     if ($archivoGuardado !== null && is_file($archivoGuardado) && !unlink($archivoGuardado)) {
         error_log('No se pudo limpiar la foto después de un error: ' . $archivoGuardado);
