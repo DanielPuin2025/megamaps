@@ -1695,6 +1695,7 @@ function attachHandlers(view){
       await subirRutasLocalesAlServidor();
       await sincronizarFotosRutaServidor();
       estadoRutasServidor='Conectado: los cambios se guardan en la base de datos para todos los navegadores.';
+      estadoGuardarSalones='Los cambios de salones y docentes se guardan en la base de datos del servidor.';
       state.modo='admin';
       go('adminPanel');
     };
