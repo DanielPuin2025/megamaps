@@ -609,6 +609,31 @@ async function sincronizarFotosRutaServidor(subirLocales=false){
   guardarFotosRuta(FOTOS_RUTA);
 }
 
+async function fotoADataUrl(file){
+  try{
+    const bitmap=await createImageBitmap(file);
+    const escala=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+    const lienzo=document.createElement('canvas');
+    lienzo.width=Math.round(bitmap.width*escala);
+    lienzo.height=Math.round(bitmap.height*escala);
+    const ctx=lienzo.getContext('2d');
+    ctx.fillStyle='#fff';
+    ctx.fillRect(0,0,lienzo.width,lienzo.height);
+    ctx.drawImage(bitmap,0,0,lienzo.width,lienzo.height);
+    return lienzo.toDataURL('image/jpeg',0.85);
+  }catch(error){
+    if(file.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type)){
+      throw new Error('No se pudo procesar la foto. Usa una imagen JPEG, PNG o WebP de hasta 5 MB.');
+    }
+    return new Promise((ok,fallo)=>{
+      const lector=new FileReader();
+      lector.onload=()=>ok(lector.result);
+      lector.onerror=()=>fallo(new Error('No se pudo leer la foto.'));
+      lector.readAsDataURL(file);
+    });
+  }
+}
+
 async function sincronizarFotosSalonesServidor(){
   if(location.protocol==='file:') return;
   try{
@@ -1366,8 +1391,8 @@ const views = {
             <option value="">Selecciona un salón</option>
             ${Object.entries(SALONES).map(([num,r])=>`<option value="${num}">${r.nombre}</option>`).join('')}
           </select>
-          <label for="fotoSalonArchivo" style="display:block;margin:12px 0 6px;font-size:13px;font-weight:700;">Foto JPEG (máximo 5 MB)</label>
-          <input id="fotoSalonArchivo" name="foto" type="file" accept=".jpg,.jpeg,image/jpeg" required>
+          <label for="fotoSalonArchivo" style="display:block;margin:12px 0 6px;font-size:13px;font-weight:700;">Foto (JPEG, PNG o WebP; se reduce automáticamente)</label>
+          <input id="fotoSalonArchivo" name="foto" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" required>
           <input type="hidden" name="MAX_FILE_SIZE" value="5242880">
           <button class="btn btn-primary" type="submit" style="margin-top:12px;">📷 Guardar foto del salón</button>
           <p id="fotoSalonEstado" role="status" style="margin:10px 0 0;font-size:13px;font-weight:600;"></p>
@@ -1707,7 +1732,26 @@ function attachHandlers(view){
       estado.textContent='Guardando foto...';
       boton.disabled=true;
       try{
-        const respuesta=await fetch(formFoto.action,{method:'POST',body:new FormData(formFoto),credentials:'same-origin',headers:{'Accept':'application/json'}});
+        const datosForm=new FormData(formFoto);
+        const original=datosForm.get('foto');
+        if(original&&original.size){
+          try{
+            const bitmap=await createImageBitmap(original);
+            const escala=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+            const lienzo=document.createElement('canvas');
+            lienzo.width=Math.round(bitmap.width*escala);
+            lienzo.height=Math.round(bitmap.height*escala);
+            const ctx=lienzo.getContext('2d');
+            ctx.fillStyle='#fff';
+            ctx.fillRect(0,0,lienzo.width,lienzo.height);
+            ctx.drawImage(bitmap,0,0,lienzo.width,lienzo.height);
+            const blob=await new Promise(ok=>lienzo.toBlob(ok,'image/jpeg',0.85));
+            if(blob) datosForm.set('foto',blob,'foto.jpg');
+          }catch(errorConversion){
+            if(original.size>5*1024*1024) throw new Error('La foto pesa más de 5 MB y este navegador no pudo reducirla. Usa una foto JPEG más ligera.');
+          }
+        }
+        const respuesta=await fetch(formFoto.action,{method:'POST',body:datosForm,credentials:'same-origin',headers:{'Accept':'application/json'}});
         const datos=await respuesta.json().catch(()=>({}));
         if(!respuesta.ok) throw new Error(datos.error||'No se pudo guardar la foto.');
         await sincronizarFotosSalonesServidor();
@@ -1742,25 +1786,21 @@ function attachHandlers(view){
       return;
     }
     document.querySelectorAll('[data-upload-ruta-step]').forEach(input=>{
-      input.addEventListener('change',()=>{
+      input.addEventListener('change',async()=>{
         const file=input.files[0]; if(!file) return;
-        if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){ alert('Selecciona una foto JPEG, PNG o WebP de hasta 5 MB.'); input.value=''; return; }
+        if(!file.type.startsWith('image/')){ alert('Selecciona un archivo de imagen (JPEG, PNG o WebP).'); input.value=''; return; }
         const nodeId=input.dataset.uploadRutaStep;
-        const reader=new FileReader();
-        reader.onload=async()=>{
-          const destino=salon.nodeId;
-          const clave=claveFotoRuta(state.adminFotosOrigen,destino,nodeId);
-          try{
-            const ruta=await guardarFotoRutaServidor(state.adminFotosOrigen,clave,nodeId,reader.result);
-            FOTOS_RUTA[clave]=ruta;
-            guardarFotosRuta(FOTOS_RUTA);
-            render();
-          }catch(error){
-            alert(`No se pudo guardar la foto: ${error.message}`);
-            render();
-          }
-        };
-        reader.readAsDataURL(file);
+        const destino=salon.nodeId;
+        const clave=claveFotoRuta(state.adminFotosOrigen,destino,nodeId);
+        try{
+          const dataUrl=await fotoADataUrl(file);
+          const ruta=await guardarFotoRutaServidor(state.adminFotosOrigen,clave,nodeId,dataUrl);
+          FOTOS_RUTA[clave]=ruta;
+          guardarFotosRuta(FOTOS_RUTA);
+        }catch(error){
+          alert(`No se pudo guardar la foto: ${error.message}`);
+        }
+        render();
       });
     });
     const cambiarOrigen=document.getElementById('cambiarFotosOrigenBtn');

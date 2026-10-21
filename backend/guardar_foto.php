@@ -68,7 +68,7 @@ try {
     }
 
     if (!isset($_FILES['foto']) || !is_array($_FILES['foto'])) {
-        throw new RuntimeException('Selecciona una foto JPEG para subir.');
+        throw new RuntimeException('Selecciona una foto para subir.');
     }
 
     $foto = $_FILES['foto'];
@@ -98,11 +98,11 @@ try {
 
     $informacionImagen = getimagesize($foto['tmp_name']);
     $mime = (new finfo(FILEINFO_MIME_TYPE))->file($foto['tmp_name']);
-    if ($informacionImagen === false
-        || $informacionImagen[2] !== IMAGETYPE_JPEG
-        || $mime !== 'image/jpeg') {
-        throw new RuntimeException('El archivo seleccionado no es una imagen JPEG válida.');
+    $extensiones = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+    if ($informacionImagen === false || !isset($extensiones[$mime])) {
+        throw new RuntimeException('Formato no válido. Usa una foto JPEG, PNG o WebP (las fotos HEIC del iPhone no se admiten; cámbialas a JPEG).');
     }
+    $extension = $extensiones[$mime];
 
     $baseFotos = __DIR__ . DIRECTORY_SEPARATOR . 'fotos';
     $carpeta = $baseFotos . DIRECTORY_SEPARATOR . 'salones';
@@ -131,7 +131,7 @@ try {
          ON fotos_salones (salon_numero)'
     );
 
-    $nombreArchivo = 'salon-' . $salon . '-' . bin2hex(random_bytes(16)) . '.jpg';
+    $nombreArchivo = 'salon-' . $salon . '-' . bin2hex(random_bytes(16)) . '.' . $extension;
     $archivoGuardado = $carpeta . DIRECTORY_SEPARATOR . $nombreArchivo;
     $ruta = 'fotos/salones/' . $nombreArchivo;
 
@@ -152,7 +152,7 @@ try {
     $pdo->commit();
 
     foreach ($anteriores as $rutaAnterior) {
-        if (is_string($rutaAnterior) && preg_match('#^fotos/salones/salon-\d{3}-[0-9a-f]{32}\.jpg$#', $rutaAnterior)) {
+        if (is_string($rutaAnterior) && preg_match('#^fotos/salones/salon-\d{3}-[0-9a-f]{32}\.(jpg|png|webp)$#', $rutaAnterior)) {
             $archivoAnterior = $baseFotos . DIRECTORY_SEPARATOR . 'salones' . DIRECTORY_SEPARATOR . basename($rutaAnterior);
             if (is_file($archivoAnterior) && !unlink($archivoAnterior)) {
                 error_log('No se pudo eliminar la foto anterior del salón: ' . $archivoAnterior);

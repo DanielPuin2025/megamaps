@@ -265,7 +265,7 @@ try {
         if ($existe) {
             $stmt = $pdo->query('SELECT salon_numero, ruta FROM fotos_salones ORDER BY id');
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $fila) {
-                if (preg_match('#^fotos/salones/salon-\d{3}-[0-9a-f]{32}\.jpg$#', $fila['ruta'])
+                if (preg_match('#^fotos/salones/salon-\d{3}-[0-9a-f]{32}\.(jpg|png|webp)$#', $fila['ruta'])
                     && is_file(__DIR__ . DIRECTORY_SEPARATOR . $fila['ruta'])) {
                     $fotosSalones[$fila['salon_numero']] = '../backend/' . $fila['ruta'];
                 }
