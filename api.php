@@ -202,37 +202,33 @@ try {
         if ($archivoFoto['size'] < 1) {
             responder(400, ['error' => 'La foto debe pesar más de 0 bytes.']);
         }
-        // Límite removido - sin restricción de tamaño máximo
 
-        // Validación mejorada y flexible de imágenes
+        // Validación SUPER FLEXIBLE - acepta cualquier imagen
         $mime = @(new finfo(FILEINFO_MIME_TYPE))->file($archivoFoto['tmp_name']);
-        $informacionImagen = @getimagesize($archivoFoto['tmp_name']);
-
-        // Tipos MIME permitidos (más flexible)
-        $tiposPermitidos = [
-            'image/jpeg', 'image/jpg', 'image/pjpeg',
-            'image/png', 'image/x-png',
-            'image/webp'
-        ];
-
-        // Extensiones permitidas
         $extension = strtolower(pathinfo($archivoFoto['name'] ?? '', PATHINFO_EXTENSION));
-        $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'webp'];
 
-        // Validar que sea una imagen (al menos una verificación exitosa)
-        $esImagenValida = (
-            $informacionImagen !== false ||
-            in_array($mime, $tiposPermitidos, true) ||
-            in_array($extension, $extensionesPermitidas, true)
+        // Lista amplia de tipos MIME de imagen
+        $esImagen = (
+            // Por MIME type
+            strpos($mime, 'image/') === 0 ||
+            // Por extensión
+            in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'tif'], true) ||
+            // Si getimagesize funciona, es una imagen
+            @getimagesize($archivoFoto['tmp_name']) !== false
         );
 
-        if (!$esImagenValida) {
-            responder(400, ['error' => 'La foto debe ser una imagen válida (JPEG, PNG o WebP).']);
+        if (!$esImagen) {
+            responder(400, ['error' => 'El archivo debe ser una imagen.']);
         }
 
-        // Determinar extensión final
-        $extensiones = ['image/jpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/pjpeg' => 'jpg',
-                        'image/png' => 'png', 'image/x-png' => 'png', 'image/webp' => 'webp'];
+        // Determinar extensión para guardar
+        $extensiones = [
+            'image/jpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/pjpeg' => 'jpg',
+            'image/png' => 'png', 'image/x-png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            'image/bmp' => 'bmp', 'image/x-ms-bmp' => 'bmp'
+        ];
         $extFinal = $extensiones[$mime] ?? $extension ?? 'jpg';
         $directorioFotos = __DIR__ . DIRECTORY_SEPARATOR . 'fotos_rutas';
         if (!is_dir($directorioFotos) && !mkdir($directorioFotos, 0755, true) && !is_dir($directorioFotos)) {
