@@ -6,7 +6,9 @@ header('Content-Type: text/html; charset=utf-8');
 $forwardedProto = explode(',', $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')[0];
 $https = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || strtolower(trim($forwardedProto)) === 'https';
+ini_set('session.gc_maxlifetime', '28800');
 session_set_cookie_params([
+    'lifetime' => 28800,
     'httponly' => true,
     'secure' => $https,
     'samesite' => 'Strict',

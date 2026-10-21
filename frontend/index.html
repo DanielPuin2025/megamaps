@@ -547,65 +547,65 @@ function guardarSalones(data){ try{ localStorage.setItem(STORAGE_KEY,JSON.string
 function cargarRutas(){ try{ const g=localStorage.getItem(RUTAS_KEY); if(g) return JSON.parse(g); }catch(e){} return {}; }
 function guardarRutas(data){ try{ localStorage.setItem(RUTAS_KEY,JSON.stringify(data)); return true; }catch(e){ alert('No se pudo guardar la ruta (' + e.message + ')'); return false; } }
 
-function cargarFotos(){ try{ const g=localStorage.getItem(FOTOS_KEY); if(g) return JSON.parse(g); }catch(e){} return {}; }
-function guardarFotos(data){ try{ localStorage.setItem(FOTOS_KEY,JSON.stringify(data)); }catch(e){} }
-function getFoto(nodeId){ return FOTOS[nodeId]||null; }
-function cargarFotosRuta(){ try{ const g=localStorage.getItem(FOTOS_RUTA_KEY); if(g) return JSON.parse(g); }catch(e){} return {}; }
-function guardarFotosRuta(data){ try{ localStorage.setItem(FOTOS_RUTA_KEY,JSON.stringify(data)); }catch(e){} }
+function cargarFotosRuta(){
+  try{
+    localStorage.removeItem(FOTOS_KEY);
+    const g=localStorage.getItem(FOTOS_RUTA_KEY);
+    if(g) return Object.fromEntries(Object.entries(JSON.parse(g)).filter(([,v])=>typeof v==='string'&&!v.startsWith('data:')));
+  }catch(e){}
+  return {};
+}
+// El navegador solo guarda una copia de lectura de las rutas de foto; la fuente de verdad es el servidor.
+function guardarFotosRuta(data){
+  try{ localStorage.setItem(FOTOS_RUTA_KEY,JSON.stringify(Object.fromEntries(Object.entries(data).filter(([,v])=>typeof v==='string'&&!v.startsWith('data:'))))); }catch(e){}
+}
 function claveFotoRuta(origenId, destinoNodeId, pasoNodeId){ return `${origenId}__${destinoNodeId}__${pasoNodeId}`; }
-const FOTO_PASO_PATRONES={
-  cafeteria:[/cafeteria/],
-  coordinacion:[/coordinacion/],
-  restaurante:[/restuarante|restaurante/],
-  biblioteca:[/biblioteca/],
-  transicion:[/transicion/],
-  cancha_central:[/cancha/],
-  escaleras_izq:[/escaleras/],
-  escaleras_principales:[/escaleras/],
-  pasillo_piso2:[/rampla/]
+// Cada paso del recorrido usa siempre la misma foto de referencia (nombre exacto del archivo).
+// Una foto guardada por el administrador para ese paso tiene prioridad.
+const FOTO_PASO_ARCHIVO={
+  cafeteria:'pasillo cafeteria rampla.jpeg',
+  coordinacion:'pasillo restuarante coordinacion.jpeg',
+  restaurante:'pasillo restuarante.jpeg',
+  biblioteca:'pasillo rampla biblioteca.jpeg',
+  transicion:'pasillo transicion.jpeg',
+  cancha_central:'pasillo baño cancha.jpeg',
+  escaleras_principales:'escaleras nancyyy.jpeg',
+  pasillo_piso2:'bajada rampla segundo piso.jpeg'
 };
-// Las fotos del servidor llegan como foto_001..foto_025; se asignan al paso por el nombre del archivo.
+const normalizarNombreArchivo=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 function fotoPorNombreDeArchivo(origenId, destinoNodeId, pasoNodeId){
-  const patrones=FOTO_PASO_PATRONES[pasoNodeId];
-  if(!patrones) return null;
+  let archivo=FOTO_PASO_ARCHIVO[pasoNodeId];
+  if(!archivo) return null;
+  if(pasoNodeId==='pasillo_piso2'&&(NODOS[origenId]?.piso||1)===1&&(NODOS[destinoNodeId]?.piso||1)===2) archivo='subida rampla.jpeg';
+  const objetivo=normalizarNombreArchivo(archivo);
   const prefijo=`${origenId}__${destinoNodeId}__foto_`;
-  const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   for(const [clave,ruta] of Object.entries(FOTOS_RUTA)){
     if(!clave.startsWith(prefijo)||typeof ruta!=='string') continue;
-    const nombre=norm(decodeURIComponent(ruta.split('/').pop()));
-    if(patrones.some(p=>p.test(nombre))) return ruta;
+    let nombre; try{ nombre=decodeURIComponent(ruta.split('/').pop()); }catch(e){ continue; }
+    if(normalizarNombreArchivo(nombre)===objetivo) return ruta;
   }
   return null;
 }
 function getFotoRuta(origenId, destinoNodeId, pasoNodeId){
-  return FOTOS_RUTA[claveFotoRuta(origenId,destinoNodeId,pasoNodeId)] || getFoto(pasoNodeId) || fotoPorNombreDeArchivo(origenId,destinoNodeId,pasoNodeId) || null;
+  return FOTOS_RUTA[claveFotoRuta(origenId,destinoNodeId,pasoNodeId)] || fotoPorNombreDeArchivo(origenId,destinoNodeId,pasoNodeId) || null;
 }
 
-async function sincronizarFotosRutaServidor(subirLocales=false){
+async function sincronizarFotosRutaServidor(){
   if(location.protocol==='file:') return;
-  for(const lugar of SITIOS){
-    const fotosLocales=Object.entries(FOTOS_RUTA).filter(([clave])=>clave.startsWith(`${lugar.id}__`));
-    if(subirLocales&&sesionAdminServidor){
-      for(const [clave,foto] of fotosLocales){
-        if(typeof foto!=='string'||!foto.startsWith('data:image/')) continue;
-        const partes=clave.split('__');
-        if(partes.length!==3) continue;
-        try{
-          const respuesta=await fetch(`../backend/api.php?action=route-photos&lugar=${encodeURIComponent(lugar.id)}`,{
-            method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json'},
-            body:JSON.stringify({clave,paso:partes[2],foto}),
-          });
-          const datos=await respuesta.json();
-          if(respuesta.ok&&datos.ruta) FOTOS_RUTA[clave]=datos.ruta;
-        }catch(error){ console.warn('No se pudo migrar una foto de ruta:',error); }
-      }
-    }
-    try{
-      const respuesta=await fetch(`../backend/api.php?action=route-photos&lugar=${encodeURIComponent(lugar.id)}`,{credentials:'same-origin',headers:{'Accept':'application/json'}});
+  const nuevas={};
+  try{
+    for(const lugar of SITIOS){
+      const respuesta=await fetch(`../backend/api.php?action=route-photos&lugar=${encodeURIComponent(lugar.id)}`,{credentials:'same-origin',headers:{'Accept':'application/json'},cache:'no-store'});
       const datos=await respuesta.json();
-      if(respuesta.ok&&datos.fotos&&typeof datos.fotos==='object') Object.assign(FOTOS_RUTA,datos.fotos);
-    }catch(error){ console.warn(`No se pudieron cargar las fotos de ${lugar.label}:`,error); }
+      if(!respuesta.ok||!datos.fotos||typeof datos.fotos!=='object') throw new Error(datos.error||'Respuesta inválida del servidor.');
+      Object.assign(nuevas,datos.fotos);
+    }
+  }catch(error){
+    console.warn('No se pudieron cargar las fotos de rutas; se usa la copia guardada:',error);
+    return;
   }
+  Object.keys(FOTOS_RUTA).forEach(clave=>delete FOTOS_RUTA[clave]);
+  Object.assign(FOTOS_RUTA,nuevas);
   guardarFotosRuta(FOTOS_RUTA);
 }
 
@@ -647,12 +647,14 @@ async function sincronizarFotosSalonesServidor(){
 }
 
 async function guardarFotoRutaServidor(lugar,clave,paso,foto){
-  if(location.protocol==='file:'||!sesionAdminServidor||!foto.startsWith('data:image/')) return foto;
+  if(location.protocol==='file:') return foto;
+  if(!sesionAdminServidor) throw new Error('No hay sesión de administrador en el servidor. Cierra sesión y vuelve a entrar con el PIN.');
   const respuesta=await fetch(`../backend/api.php?action=route-photos&lugar=${encodeURIComponent(lugar)}`,{
     method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json'},
     body:JSON.stringify({clave,paso,foto}),
   });
-  const datos=await respuesta.json();
+  const datos=await respuesta.json().catch(()=>({}));
+  if(respuesta.status===401){ sesionAdminServidor=false; throw new Error('La sesión de administrador expiró. Vuelve a entrar con el PIN.'); }
   if(!respuesta.ok) throw new Error(datos.error||'No se pudo guardar la foto en SQLite.');
   return datos.ruta;
 }
@@ -686,7 +688,6 @@ function obtenerDirectorioDocentes(){
 
 let SALONES = cargarSalones();
 let RUTAS_PERSONALIZADAS = cargarRutas();
-let FOTOS = cargarFotos();
 let FOTOS_RUTA = cargarFotosRuta();
 const FOTOS_SALON = {};
 let sesionAdminServidor = false;
@@ -706,6 +707,8 @@ function obtenerRutaGuardada(clave){
   return r;
 }
 
+let rutasSoloLocales = {};
+
 function sincronizarRutasServidor(){
   if(location.protocol==='file:') return Promise.resolve();
   if(cargaRutasServidor) return cargaRutasServidor;
@@ -715,6 +718,7 @@ function sincronizarRutasServidor(){
       const respuesta=await fetch('../backend/api.php?action=routes',{
         headers:{'Accept':'application/json'},
         credentials:'same-origin',
+        cache:'no-store',
       });
       const datos=await respuesta.json();
       if(!respuesta.ok) throw new Error(datos.error||'El servidor no pudo cargar las rutas.');
@@ -722,16 +726,31 @@ function sincronizarRutasServidor(){
         throw new Error('El servidor devolvió rutas con un formato inválido.');
       }
 
-      Object.assign(RUTAS_PERSONALIZADAS,datos.rutas);
+      // El servidor manda: lo que solo existía en este navegador se separa para subirlo al iniciar sesión como administrador.
+      rutasSoloLocales=Object.fromEntries(Object.entries(RUTAS_PERSONALIZADAS).filter(([clave])=>!(clave in datos.rutas)));
+      RUTAS_PERSONALIZADAS=datos.rutas;
       guardarRutas(RUTAS_PERSONALIZADAS);
       servidorRutasDisponible=true;
       estadoRutasServidor='Rutas compartidas conectadas a SQLite.';
     }catch(error){
       console.warn('No se pudieron sincronizar las rutas compartidas:',error);
-      estadoRutasServidor='No se pudo conectar a SQLite. Las rutas nuevas quedarán solo en este navegador.';
+      estadoRutasServidor='No se pudo conectar con el servidor. No se podrán guardar cambios hasta que vuelva la conexión.';
+      cargaRutasServidor=null;
     }
   })();
   return cargaRutasServidor;
+}
+
+async function subirRutasLocalesAlServidor(){
+  for(const [clave,ruta] of Object.entries(rutasSoloLocales)){
+    const rutaNormal=Array.isArray(ruta)?{camino:ruta,etiquetas:null}:ruta;
+    try{
+      await guardarRutaServidor(clave,rutaNormal);
+      RUTAS_PERSONALIZADAS[clave]=rutaNormal;
+      delete rutasSoloLocales[clave];
+    }catch(error){ console.warn(`No se pudo subir la ruta local ${clave}:`,error); }
+  }
+  guardarRutas(RUTAS_PERSONALIZADAS);
 }
 
 function sincronizarSalonesServidor(){
@@ -771,52 +790,43 @@ function sincronizarSalonesServidor(){
 
 async function guardarRutaServidor(clave,ruta){
   if(location.protocol==='file:'){
-    return 'Guardada en este navegador. Abre MegaMaps desde XAMPP para compartirla entre navegadores.';
+    return 'Guardada en este navegador (modo archivo). Abre MegaMaps desde el servidor para compartirla.';
   }
   if(!sesionAdminServidor){
-    return 'Guardada en este navegador, pero no en SQLite: no se inició sesión en el servidor.';
+    throw new Error('No hay sesión de administrador en el servidor. Cierra sesión y vuelve a entrar con el PIN.');
   }
 
-  try{
-    const respuesta=await fetch('../backend/api.php?action=routes',{
-      method:'POST',
-      credentials:'same-origin',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify({clave,ruta}),
-    });
-    const datos=await respuesta.json();
-    if(!respuesta.ok) throw new Error(datos.error||'El servidor rechazó la ruta.');
-    estadoRutasServidor='Rutas compartidas conectadas a SQLite.';
-    return 'Ruta guardada en SQLite y compartida entre navegadores.';
-  }catch(error){
-    console.error('No se pudo guardar la ruta en SQLite:',error);
-    estadoRutasServidor=`Error al guardar en SQLite: ${error.message}`;
-    return `La ruta quedó guardada solo en este navegador. No se pudo sincronizar con SQLite: ${error.message}`;
-  }
+  const respuesta=await fetch('../backend/api.php?action=routes',{
+    method:'POST',
+    credentials:'same-origin',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({clave,ruta}),
+  });
+  const datos=await respuesta.json().catch(()=>({}));
+  if(respuesta.status===401){ sesionAdminServidor=false; throw new Error('La sesión de administrador expiró. Vuelve a entrar con el PIN.'); }
+  if(!respuesta.ok) throw new Error(datos.error||'El servidor rechazó la ruta.');
+  estadoRutasServidor='Rutas compartidas conectadas a SQLite.';
+  return 'Ruta guardada en la base de datos y compartida entre navegadores.';
 }
 
 async function guardarSalonesServidor(salones){
   if(location.protocol==='file:'){
-    return 'Guardados solo en este navegador. Usa XAMPP para compartir salones y docentes.';
+    return 'Guardados en este navegador (modo archivo). Abre MegaMaps desde el servidor para compartirlos.';
   }
   if(!sesionAdminServidor){
-    return 'Guardados solo en este navegador; inicia sesión en el servidor para compartirlos.';
+    throw new Error('No hay sesión de administrador en el servidor. Cierra sesión y vuelve a entrar con el PIN.');
   }
 
-  try{
-    const respuesta=await fetch('../backend/api.php?action=salones',{
-      method:'POST',
-      credentials:'same-origin',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify({salones}),
-    });
-    const datos=await respuesta.json();
-    if(!respuesta.ok) throw new Error(datos.error||'El servidor rechazó los datos.');
-    return 'Salones y docentes guardados en SQLite y compartidos entre navegadores.';
-  }catch(error){
-    console.error('No se pudieron guardar salones y docentes en SQLite:',error);
-    return `Guardados solo en este navegador. No se pudo sincronizar con SQLite: ${error.message}`;
-  }
+  const respuesta=await fetch('../backend/api.php?action=salones',{
+    method:'POST',
+    credentials:'same-origin',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({salones}),
+  });
+  const datos=await respuesta.json().catch(()=>({}));
+  if(respuesta.status===401){ sesionAdminServidor=false; throw new Error('La sesión de administrador expiró. Vuelve a entrar con el PIN.'); }
+  if(!respuesta.ok) throw new Error(datos.error||'El servidor rechazó los datos.');
+  return 'Salones y docentes guardados en la base de datos y compartidos entre navegadores.';
 }
 
 // ═══════════════════════════════════════
@@ -1316,7 +1326,7 @@ const views = {
   adminPanel: () => `
     <div class="fade">
       <h2 class="search-title">Panel de administración</h2>
-      <p class="search-sub">${Object.keys(SALONES).length} salones · ${Object.keys(FOTOS_RUTA).length||Object.keys(FOTOS).length} fotos de rutas</p>
+      <p class="search-sub">${Object.keys(SALONES).length} salones · ${Object.keys(FOTOS_RUTA).length} fotos de rutas</p>
       <p role="status" aria-live="polite" style="font-size:12px;color:var(--muted);">${estadoRutasServidor}</p>
       <p role="status" aria-live="polite" style="font-size:12px;color:var(--muted);">${estadoGuardarSalones}</p>
 
@@ -1653,32 +1663,38 @@ function attachHandlers(view){
       const v=document.getElementById('pinInput').value;
       const error=document.getElementById('pinErr');
       error.style.display='none';
-      if(v!=='1234'){
-        error.textContent='PIN incorrecto.';
-        error.style.display='block';
+      const mostrarError=mensaje=>{ error.textContent=mensaje; error.style.display='block'; };
+
+      if(location.protocol==='file:'){
+        // Modo archivo (sin servidor): único caso donde se valida localmente.
+        if(v!=='1234') return mostrarError('PIN incorrecto.');
+        state.modo='admin';
+        go('adminPanel');
         return;
       }
 
-      await Promise.all([sincronizarRutasServidor(),sincronizarSalonesServidor()]);
-      if(location.protocol!=='file:'&&servidorRutasDisponible){
-        try{
-          const respuesta=await fetch('../backend/api.php?action=admin-login',{
-            method:'POST',
-            credentials:'same-origin',
-            headers:{'Content-Type':'application/json','Accept':'application/json'},
-            body:JSON.stringify({pin:v}),
-          });
-          const datos=await respuesta.json();
-          if(!respuesta.ok) throw new Error(datos.error||'No se pudo iniciar sesión en el servidor.');
-          sesionAdminServidor=true;
-          await sincronizarFotosRutaServidor(true);
-          estadoRutasServidor='Conectado: los cambios de rutas se guardarán para todos los navegadores.';
-        }catch(errorServidor){
-          sesionAdminServidor=false;
-          estadoRutasServidor=`Modo local: no se pudo iniciar sesión en el servidor (${errorServidor.message}).`;
-          console.error('No se pudo iniciar la sesión de administración del servidor:',errorServidor);
-        }
+      try{
+        const respuesta=await fetch('../backend/api.php?action=admin-login',{
+          method:'POST',
+          credentials:'same-origin',
+          headers:{'Content-Type':'application/json','Accept':'application/json'},
+          body:JSON.stringify({pin:v}),
+        });
+        const datos=await respuesta.json().catch(()=>({}));
+        if(!respuesta.ok) throw new Error(datos.error||'No se pudo iniciar sesión en el servidor.');
+      }catch(errorServidor){
+        sesionAdminServidor=false;
+        console.error('No se pudo iniciar la sesión de administración del servidor:',errorServidor);
+        return mostrarError(errorServidor.message==='Failed to fetch'?'Sin conexión con el servidor.':errorServidor.message);
       }
+
+      sesionAdminServidor=true;
+      cargaRutasServidor=null;
+      cargaSalonesServidor=null;
+      await Promise.all([sincronizarRutasServidor(),sincronizarSalonesServidor()]);
+      await subirRutasLocalesAlServidor();
+      await sincronizarFotosRutaServidor();
+      estadoRutasServidor='Conectado: los cambios se guardan en la base de datos para todos los navegadores.';
       state.modo='admin';
       go('adminPanel');
     };
@@ -1710,14 +1726,21 @@ function attachHandlers(view){
       const nT=document.getElementById('fNombreT').value.trim();
       const aT=document.getElementById('fAreaT').value.trim();
       const nodeId=SALONES[numero]?.nodeId||crearNodoParaSalonNuevo(numero,piso);
+      const anterior=SALONES[numero];
       SALONES[numero]={
         nombre:`Salón ${numero}`, piso, nodeId,
         manana:nM?{grado:gM||"—",nombre:nM,area:aM||null}:null,
         tarde:nT?{grado:gT||"—",nombre:nT,area:aT||null}:null,
       };
-      guardarSalones(SALONES);
+      try{
+        estadoGuardarSalones=await guardarSalonesServidor(SALONES);
+        guardarSalones(SALONES);
+      }catch(error){
+        if(anterior) SALONES[numero]=anterior; else delete SALONES[numero];
+        alert(`No se guardó el salón: ${error.message}`);
+        return;
+      }
       state.adminEditando=null;
-      estadoGuardarSalones=await guardarSalonesServidor(SALONES);
       go('adminSalones');
     });
   }
@@ -1883,12 +1906,14 @@ function attachHandlers(view){
         return;
       }
       const ruta={camino:[...state.adminRutaCamino],etiquetas:[...state.adminRutaEtiquetas]};
-      RUTAS_PERSONALIZADAS[clave]=ruta;
-      const guardadoLocal=guardarRutas(RUTAS_PERSONALIZADAS);
-      state.estadoGuardarRuta=guardadoLocal
-        ? await guardarRutaServidor(clave,ruta)
-        : 'No se pudo guardar la ruta en el almacenamiento local del navegador.';
-      state.adminRutaEditando=false;
+      try{
+        state.estadoGuardarRuta=await guardarRutaServidor(clave,ruta);
+        RUTAS_PERSONALIZADAS[clave]=ruta;
+        guardarRutas(RUTAS_PERSONALIZADAS);
+        state.adminRutaEditando=false;
+      }catch(error){
+        state.estadoGuardarRuta=`No se guardó la ruta: ${error.message}`;
+      }
       render();
     });
   }
