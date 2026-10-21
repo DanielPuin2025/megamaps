@@ -1,9 +1,7 @@
-const CACHE = "megamaps-v14-assets";
+const CACHE = "megamaps-v15-assets";
 const ARCHIVOS = [
   "./",
   "./index.html",
-  "./style.css",
-  "./script.js",
   "./manifest.json",
   "./assets/Salones/escudo.png",
   "./assets/Salones/logo_megamaps.png",

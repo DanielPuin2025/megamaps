@@ -12,26 +12,20 @@ for f in megamaps.sqlite fotos_rutas_personalidas.sqlite; do
     if [ ! -f "$DATA/$f" ] && [ -f "$SEED/$f" ]; then
         cp "$SEED/$f" "$DATA/$f"
     fi
+    if [ ! -f "$DATA/$f" ]; then
+        echo "Error: required database $DATA/$f is missing." >&2
+        exit 1
+    fi
 done
 
-php /usr/local/share/megamaps-migrar-rutas.php "$DATA/fotos_rutas_personalidas.sqlite" "$DATA/megamaps.sqlite" || true
+php /usr/local/share/megamaps-migrar-rutas.php "$DATA/fotos_rutas_personalidas.sqlite" "$DATA/megamaps.sqlite"
 
 chown -R www-data:www-data "$DATA"
 chmod 0770 "$DATA"
 
-# Verificar que las bases de datos sean accesibles antes de iniciar Apache
 echo "Verificando bases de datos..."
-if [ -f "$DATA/megamaps.sqlite" ]; then
-    echo "✓ megamaps.sqlite encontrada"
-else
-    echo "⚠ Advertencia: megamaps.sqlite no encontrada en $DATA"
-fi
-
-if [ -f "$DATA/fotos_rutas_personalidas.sqlite" ]; then
-    echo "✓ fotos_rutas_personalidas.sqlite encontrada"
-else
-    echo "⚠ Advertencia: fotos_rutas_personalidas.sqlite no encontrada en $DATA"
-fi
+echo "✓ megamaps.sqlite encontrada"
+echo "✓ fotos_rutas_personalidas.sqlite encontrada"
 
 # El codigo espera "base de datos/" junto a backend/ y frontend/, y backend/fotos/.
 ln -sfn "$DATA" "$WEB/base de datos"

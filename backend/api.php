@@ -212,6 +212,12 @@ try {
         }
         $nombreFoto = $lugarFotos . '-' . $coincidencia[1] . '-' . hash('sha256', $claveFoto . '|' . $pasoFoto) . '.' . $extensiones[$mime];
         $rutaRelativa = '../base%20de%20datos/fotos_rutas/' . rawurlencode($nombreFoto);
+        $stmtAnterior = $pdo->prepare(
+            "SELECT ruta FROM {$tablaFoto} WHERE clave = :clave AND paso_node_id = :paso"
+        );
+        $stmtAnterior->execute(['clave' => $claveFoto, 'paso' => $pasoFoto]);
+        $rutaAnterior = $stmtAnterior->fetchColumn();
+
         if (file_put_contents($directorioFotos . DIRECTORY_SEPARATOR . $nombreFoto, $binario, LOCK_EX) === false) {
             throw new RuntimeException('No se pudo guardar la imagen.');
         }
@@ -219,6 +225,25 @@ try {
             VALUES (:salon, :clave, :paso, :ruta, CURRENT_TIMESTAMP)
             ON CONFLICT(clave, paso_node_id) DO UPDATE SET ruta = excluded.ruta, actualizado_en = CURRENT_TIMESTAMP");
         $stmt->execute(['salon' => $coincidencia[1], 'clave' => $claveFoto, 'paso' => $pasoFoto, 'ruta' => $rutaRelativa]);
+
+        if (is_string($rutaAnterior) && $rutaAnterior !== $rutaRelativa) {
+            foreach ($extensiones as $extensionAnterior) {
+                $rutaGeneradaAnterior = '../base%20de%20datos/fotos_rutas/'
+                    . $lugarFotos . '-' . $coincidencia[1] . '-'
+                    . hash('sha256', $claveFoto . '|' . $pasoFoto)
+                    . '.' . $extensionAnterior;
+                if ($rutaAnterior !== $rutaGeneradaAnterior) {
+                    continue;
+                }
+
+                $archivoAnterior = $directorioFotos . DIRECTORY_SEPARATOR . basename($rutaAnterior);
+                if (is_file($archivoAnterior) && !unlink($archivoAnterior)) {
+                    error_log('No se pudo eliminar la foto anterior de una ruta: ' . $archivoAnterior);
+                }
+                break;
+            }
+        }
+
         responder(200, ['ok' => true, 'ruta' => $rutaRelativa]);
     }
 

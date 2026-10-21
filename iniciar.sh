@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "$(dirname "$0")"
 
 echo "======================================"
 echo "🎓 MegaMaps - Megacolegio El Progreso"
@@ -15,25 +16,26 @@ fi
 echo "✅ PHP detectado: $(php -v | head -n 1)"
 echo ""
 
-# Verificar SQLite
-if ! php -m | grep -q sqlite3; then
-    echo "⚠️  Advertencia: SQLite3 no está habilitado en PHP"
-    echo "   El sistema podría no funcionar correctamente"
-    echo ""
+# Verificar extensiones requeridas por el backend PHP.
+if ! php -m | grep -qi pdo_sqlite; then
+    echo "❌ Error: La extensión pdo_sqlite no está habilitada en PHP"
+    exit 1
 fi
 
-# Crear carpetas necesarias
-echo "📁 Creando carpetas necesarias..."
-mkdir -p fotos/salones
-chmod 777 fotos/salones 2>/dev/null || true
-echo "   ✓ fotos/salones"
+if ! php -m | grep -qi fileinfo; then
+    echo "❌ Error: La extensión fileinfo no está habilitada en PHP"
+    exit 1
+fi
 
-# Verificar base de datos
-if [ ! -f "megamaps.sqlite" ]; then
-    echo ""
-    echo "⚠️  Base de datos no encontrada. Ejecuta:"
-    echo "   python crear_base_datos.py"
-    echo ""
+if [ ! -f "base de datos/megamaps.sqlite" ]; then
+    echo "❌ Error: No se encontró base de datos/megamaps.sqlite"
+    echo "   No se ha modificado ni recreado ninguna base de datos."
+    exit 1
+fi
+if [ ! -f "base de datos/fotos_rutas_personalidas.sqlite" ]; then
+    echo "❌ Error: No se encontró base de datos/fotos_rutas_personalidas.sqlite"
+    echo "   No se ha modificado ni recreado ninguna base de datos."
+    exit 1
 fi
 
 # Determinar puerto
@@ -49,11 +51,11 @@ echo "🚀 Iniciando servidor en puerto $PORT"
 echo "======================================"
 echo ""
 echo "📱 Accede a la aplicación:"
-echo "   • Principal: http://localhost:$PORT/index.html"
-echo "   • Administrador: http://localhost:$PORT/admin.html"
+echo "   • Principal: http://localhost:$PORT/frontend/index.html"
+echo "   • Inicio rápido: http://localhost:$PORT/"
 echo ""
 echo "Presiona Ctrl+C para detener el servidor"
 echo ""
 
 # Iniciar servidor
-php -S localhost:$PORT
+php -S 127.0.0.1:$PORT -t .

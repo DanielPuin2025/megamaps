@@ -9,7 +9,7 @@ services:
       - "8080:80"  # Cambia 8080 por el puerto que prefieras
     environment:
       - MEGAMAPS_DATA_DIR=/data
-      - MEGAMAPS_ADMIN_PIN=${MEGAMAPS_ADMIN_PIN:-cambia-esta-clave}
+      - MEGAMAPS_ADMIN_PIN=${MEGAMAPS_ADMIN_PIN:?Define MEGAMAPS_ADMIN_PIN en .env}
     volumes:
       - megamaps-data:/data  # Volumen persistente para bases de datos y fotos
     healthcheck:

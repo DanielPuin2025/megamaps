@@ -1,5 +1,6 @@
 @echo off
 title MegaMaps - Megacolegio El Progreso
+cd /d "%~dp0"
 
 echo ======================================
 echo   MegaMaps - Megacolegio El Progreso
@@ -15,21 +16,43 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
+set "PHP_PATH="
+for /f "delims=" %%i in ('where php') do if not defined PHP_PATH set "PHP_PATH=%%i"
+for %%i in ("%PHP_PATH%") do set "PHP_DIR=%%~dpi"
+
 echo [OK] PHP detectado
 php -v | findstr /C:"PHP"
 echo.
 
-REM Crear carpetas
-echo [INFO] Creando carpetas necesarias...
-if not exist "fotos\salones" mkdir "fotos\salones"
-echo       - fotos\salones creada
-echo.
+REM Verificar que PHP tenga SQLite y soporte para validar imagenes.
+php -c php.ini -d "extension_dir=%PHP_DIR%ext" -d extension=pdo_sqlite -d extension=fileinfo -m | findstr /I /C:"pdo_sqlite" >nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] La extension pdo_sqlite no esta habilitada en PHP
+    pause
+    exit /b 1
+)
 
-REM Verificar base de datos
-if not exist "megamaps.sqlite" (
-    echo [ADVERTENCIA] Base de datos no encontrada
-    echo              Ejecuta: python crear_base_datos.py
+php -c php.ini -d "extension_dir=%PHP_DIR%ext" -d extension=pdo_sqlite -d extension=fileinfo -m | findstr /I /C:"fileinfo" >nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] La extension fileinfo no esta habilitada en PHP
+    pause
+    exit /b 1
+)
+
+if not exist "base de datos\megamaps.sqlite" (
+    echo [ERROR] No se encontro base de datos\megamaps.sqlite
+    echo         No se ha modificado ni recreado ninguna base de datos.
     echo.
+    pause
+    exit /b 1
+)
+
+if not exist "base de datos\fotos_rutas_personalidas.sqlite" (
+    echo [ERROR] No se encontro base de datos\fotos_rutas_personalidas.sqlite
+    echo         No se ha modificado ni recreado ninguna base de datos.
+    echo.
+    pause
+    exit /b 1
 )
 
 REM Determinar puerto
@@ -45,11 +68,11 @@ echo   Iniciando servidor en puerto %PORT%
 echo ======================================
 echo.
 echo [WEB] Accede a la aplicacion:
-echo       - Principal: http://localhost:%PORT%/index.html
-echo       - Administrador: http://localhost:%PORT%/admin.html
+echo       - Principal: http://localhost:%PORT%/frontend/index.html
+echo       - Inicio rapido: http://localhost:%PORT%/
 echo.
 echo Presiona Ctrl+C para detener el servidor
 echo.
 
 REM Iniciar servidor
-php -S localhost:%PORT%
+php -c php.ini -d "extension_dir=%PHP_DIR%ext" -d extension=pdo_sqlite -d extension=fileinfo -S 127.0.0.1:%PORT% -t .

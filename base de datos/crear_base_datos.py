@@ -39,7 +39,11 @@ def main():
         salones = json.load(archivo)
 
     if DB_PATH.exists():
-        DB_PATH.unlink()
+        raise SystemExit(
+            f"{DB_PATH.name} ya existe. No se sobrescribirá para proteger los datos; "
+            "haz una copia de seguridad y retírala manualmente solo si deseas crear "
+            "una base nueva."
+        )
 
     con = sqlite3.connect(DB_PATH)
     con.execute("PRAGMA foreign_keys = ON")
@@ -115,4 +119,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

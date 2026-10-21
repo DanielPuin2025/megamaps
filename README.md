@@ -1,174 +1,63 @@
-# 🚀 MegaMaps - Sistema de Navegación del Megacolegio
+# MegaMaps
 
-## 📋 Descripción
-Aplicación web tipo Google Maps para navegación interna del Megacolegio El Progreso. Muestra rutas optimizadas con fotografías de cada punto del recorrido.
+Aplicación web de navegación del Megacolegio El Progreso. La versión mantenida usa PHP, SQLite y una interfaz web adaptable a celular.
 
-## ✨ Características
+## Estructura activa
 
-- 🗺️ Navegación visual con rutas optimizadas
-- 📸 Fotos de cada punto del recorrido
-- 🎯 Sin redundancia: una foto por punto
-- 🔧 Panel de administración completo
-- 📱 Diseño responsive (móvil y desktop)
-- ⚡ Sin límites de tamaño/formato de fotos
-
-## 📁 Estructura del Proyecto
-
-```
-CODIGO_/
-├── index.html              # Aplicación principal
-├── admin.html              # Panel de administrador
-├── api.php                 # Backend API
-├── guardar_foto.php        # Subida de fotos
-├── .htaccess              # Configuración Apache
-├── php.ini                # Configuración PHP
-│
-├── db/
-│   ├── megamaps.db       # Base de datos única
-│   └── schema.sql        # Esquema de la BD
-│
-├── assets/
-│   └── fotos/            # Todas las fotografías
-│       ├── salones/
-│       └── galeria/
-│
-└── docs/
-    ├── PLAN_REORGANIZACION.md
-    └── SOLUCION_FOTOS_UNICAS.md
+```text
+frontend/
+  index.html                  Aplicación y panel de administración
+  assets/                      Imágenes iniciales, logos e integrantes
+  manifest.json, sw.js         Instalación y caché sin conexión
+backend/
+  api.php                      Rutas, salones, inicio de sesión y fotos de recorridos
+  guardar_foto.php             Formulario auxiliar de fotos JPEG de salones
+base de datos/
+  megamaps.sqlite              Datos de salones, docentes y rutas
+  fotos_rutas_personalidas.sqlite  Asociación de fotos a pasos de recorridos
+  schema.sql                   Esquema usado por crear_base_datos.py
+docker/
+  Configuración de Apache, PHP y migración de rutas
+docker-compose.yml
+Dockerfile
+iniciar.bat / iniciar.sh       Inicio local
 ```
 
-## 🗄️ Base de Datos
+`megamaps.sqlite` y `fotos_rutas_personalidas.sqlite` son bases distintas con responsabilidades diferentes; no son copias. Las dos se inicializan como semillas para Docker y luego se conservan en el volumen persistente `/data`. No borres el volumen de producción para actualizar la aplicación.
 
-### Tabla: fotos_salones
-```sql
-CREATE TABLE fotos_salones (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    salon_numero TEXT NOT NULL,
-    ruta TEXT NOT NULL UNIQUE,
-    creada_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+Las fotos iniciales están en `frontend/assets/`. Las fotos nuevas de recorridos se guardan en `fotos_rutas/` dentro del directorio de datos persistente y su ruta queda registrada en SQLite. El panel acepta JPEG, PNG y WebP de hasta 5 MB. La página auxiliar `frontend/subir_foto.html` acepta JPEG.
+
+## Ejecutar localmente en Windows
+
+Requisitos: PHP 8.3 con la carpeta `ext` de extensiones. `iniciar.bat` carga `pdo_sqlite` y `fileinfo` desde esa instalación y aplica los límites de carga del proyecto.
+
+1. Ejecuta `iniciar.bat`.
+2. Abre `http://localhost:8000/` o `http://localhost:8000/frontend/index.html`.
+3. La aplicación usa los archivos de datos de `base de datos/`; conserva una copia antes de restaurar o reemplazar esos archivos.
+
+En Linux/macOS, ejecuta `./iniciar.sh`.
+
+## Publicar con Docker
+
+Configura `MEGAMAPS_ADMIN_PIN` con una clave privada en EasyPanel o en `.env` y ejecuta:
+
+```sh
+cp .env.example .env
+# Edita .env y reemplaza MEGAMAPS_ADMIN_PIN por una clave privada.
+docker compose up --build -d
 ```
 
-**Lógica:** Una foto por salón, reutilizada en todas las rutas.
+La aplicación responde en el puerto `8080` por defecto. Los archivos SQLite y fotos nuevas persisten en el volumen `megamaps-data`. La configuración inicial de administración está en `.env.example`; no uses una clave de demostración en producción.
 
-## 🚀 Instalación
+## Crear una base inicial
 
-### Requisitos
-- PHP 7.4+
-- Apache con mod_rewrite
-- SQLite3
+`base de datos/crear_base_datos.py` construye una base desde `datos_salones_seed.json` únicamente cuando el archivo SQLite todavía no existe. Se niega a sobrescribir una base existente para no borrar rutas ni datos guardados.
 
-### Pasos
-```bash
-# 1. Clonar repositorio
-git clone https://github.com/DanielPuin2025/megamaps.git
+## Verificación rápida
 
-# 2. Configurar permisos
-chmod 755 .
-chmod 777 assets/fotos/
-chmod 666 db/megamaps.db
-
-# 3. Iniciar servidor
-php -S localhost:8000
-
-# 4. Acceder
-http://localhost:8000/index.html
-http://localhost:8000/admin.html (PIN: 1234)
+```sh
+php -l backend/api.php
+php -l backend/guardar_foto.php
 ```
 
-## 📱 Uso
-
-### Para Usuarios
-1. Ingresa el número del salón
-2. Visualiza la ruta con fotos
-3. Sigue las indicaciones visuales
-
-### Para Administradores
-1. Accede a `admin.html`
-2. Login con PIN: 1234
-3. Sube fotos por salón
-4. Las fotos aparecen automáticamente en todas las rutas
-
-## 🔧 Configuración
-
-### Subida de Fotos
-Sin límites configurados por defecto. Para establecer límites:
-
-**php.ini:**
-```ini
-upload_max_filesize = 50M  ; Límite personalizado
-post_max_size = 50M
-```
-
-### Formatos Aceptados
-- JPEG, JPG, PNG, WebP, GIF, BMP, SVG, TIFF
-
-## 🛠️ API Endpoints
-
-### Fotos de Salones
-```
-GET api.php?action=fotos-salones
-→ Retorna todas las fotos de salones
-```
-
-### Login Admin
-```
-POST api.php?action=admin-login
-Body: {"pin": "1234"}
-```
-
-### Subir Foto
-```
-POST guardar_foto.php
-FormData: { salon, foto }
-```
-
-## 🐛 Solución de Problemas
-
-### No se pueden subir fotos
-```bash
-# Verificar permisos
-chmod 777 assets/fotos/
-
-# Verificar PHP
-php -m | grep sqlite
-```
-
-### Base de datos bloqueada
-```bash
-# Liberar
-fuser -k db/megamaps.db
-```
-
-## 📝 Changelog
-
-### v2.0 (Octubre 2026)
-- ✅ Reorganización completa del proyecto
-- ✅ Estructura de carpetas limpia
-- ✅ Base de datos unificada
-- ✅ Sin archivos duplicados
-- ✅ Lógica de fotos simplificada
-- ✅ Panel admin mejorado
-
-### v1.0 (Septiembre 2026)
-- Versión inicial
-
-## 👥 Equipo
-
-- **Desarrollador:** Daniel Puín
-- **Institución:** Megacolegio El Progreso
-- **Año:** 2026
-
-## 📄 Licencia
-
-Proyecto educativo - Megacolegio El Progreso
-
-## 🔗 Enlaces
-
-- **Repositorio:** https://github.com/DanielPuin2025/megamaps
-- **Producción:** http://megamaps.programamega.com
-- **EasyPanel:** http://144.126.156.160:3000/projects/yearbook/app/megamaps
-
----
-
-**Última actualización:** 20 de Octubre 2026
+Inicia el servidor con el script de tu sistema y comprueba `http://127.0.0.1:8000/backend/api.php?action=health`; debe responder `{"status":"ok"}`.

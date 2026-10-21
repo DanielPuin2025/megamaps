@@ -40,6 +40,12 @@ _tmp_*
 # Bases de datos (opcional - comentar si quieres versionar)
 # *.sqlite
 # *.db
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
+base de datos/fotos_rutas/
+base de datos/fotos/
+backend/fotos/
 
 # Cache
 .uv-cache/
