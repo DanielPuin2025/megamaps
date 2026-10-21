@@ -296,29 +296,67 @@ try {
     }
 
     if ($accion === 'fotos-salones') {
-        // Nuevo endpoint: obtener fotos de salones
+        // Nuevo endpoint: obtener fotos de salones CON FALLBACK
         try {
+            $fotos = [];
+
+            // 1. Intentar obtener de la BD
             $stmt = $pdo->query(
                 'SELECT salon_numero, ruta, creada_en
                  FROM fotos_salones
                  ORDER BY salon_numero, creada_en DESC'
             );
-            $fotos = [];
-            $vistas = []; // Para evitar duplicados, tomar la más reciente
 
+            $vistas = [];
             while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $key = 'salon_' . $row['salon_numero'];
+
                 // Solo tomar la primera (más reciente) por salón
                 if (!isset($vistas[$key])) {
-                    $fotos[$key] = $row['ruta'];
-                    $vistas[$key] = true;
+                    // Verificar que el archivo existe
+                    $rutaCompleta = __DIR__ . '/' . $row['ruta'];
+                    if (file_exists($rutaCompleta)) {
+                        $fotos[$key] = $row['ruta'];
+                        $vistas[$key] = true;
+                    }
                 }
             }
 
-            responder(200, ['fotos' => $fotos]);
+            // 2. FALLBACK: Buscar fotos en galeria/ por número de salón
+            $archivosGaleria = glob(__DIR__ . '/assets/fotos/galeria/*.{jpg,jpeg,png,webp}', GLOB_BRACE);
+
+            foreach ($archivosGaleria as $archivo) {
+                $nombre = basename($archivo);
+
+                // Extraer número de salón del nombre (101, 107, etc.)
+                if (preg_match('/(\d{3})/', $nombre, $matches)) {
+                    $numeroSalon = $matches[1];
+                    $key = 'salon_' . $numeroSalon;
+
+                    // Solo agregar si no existe en BD
+                    if (!isset($fotos[$key])) {
+                        $fotos[$key] = 'assets/fotos/galeria/' . $nombre;
+                    }
+                }
+            }
+
+            responder(200, ['fotos' => $fotos, 'total' => count($fotos)]);
         } catch (PDOException $e) {
             error_log('Error al obtener fotos de salones: ' . $e->getMessage());
-            responder(200, ['fotos' => []]); // Devolver array vacío en caso de error
+
+            // Fallback total: solo archivos de galería
+            $fotos = [];
+            $archivosGaleria = glob(__DIR__ . '/assets/fotos/galeria/*.{jpg,jpeg,png,webp}', GLOB_BRACE);
+
+            foreach ($archivosGaleria as $archivo) {
+                $nombre = basename($archivo);
+                if (preg_match('/(\d{3})/', $nombre, $matches)) {
+                    $numeroSalon = $matches[1];
+                    $fotos['salon_' . $numeroSalon] = 'assets/fotos/galeria/' . $nombre;
+                }
+            }
+
+            responder(200, ['fotos' => $fotos, 'fallback' => true]);
         }
     }
 
