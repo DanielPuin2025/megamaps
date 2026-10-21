@@ -194,8 +194,9 @@ try {
             ? $entradaFoto['paso'] : '';
         $contenidoFoto = is_array($entradaFoto) && isset($entradaFoto['foto']) && is_string($entradaFoto['foto'])
             ? $entradaFoto['foto'] : '';
-        if (!preg_match('/^' . preg_quote($lugarFotos, '/') . '__salon_(\d{3})__salon_\d{3}$/', $claveFoto, $coincidencia)
+        if (!preg_match('/^' . preg_quote($lugarFotos, '/') . '__salon_(\d{3})__([a-zA-Z0-9_-]{1,80})$/', $claveFoto, $coincidencia)
             || !identificadorValido($pasoFoto)
+            || $coincidencia[2] !== $pasoFoto
             || !preg_match('/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+\/=]+)$/', $contenidoFoto, $imagen)) {
             responder(400, ['error' => 'La foto o su salón no tienen un formato válido.']);
         }
