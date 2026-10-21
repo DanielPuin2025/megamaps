@@ -295,6 +295,33 @@ try {
         responder(200, ['authenticated' => !empty($_SESSION['megamaps_admin'])]);
     }
 
+    if ($accion === 'fotos-salones') {
+        // Nuevo endpoint: obtener fotos de salones
+        try {
+            $stmt = $pdo->query(
+                'SELECT salon_numero, ruta, creada_en
+                 FROM fotos_salones
+                 ORDER BY salon_numero, creada_en DESC'
+            );
+            $fotos = [];
+            $vistas = []; // Para evitar duplicados, tomar la más reciente
+
+            while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $key = 'salon_' . $row['salon_numero'];
+                // Solo tomar la primera (más reciente) por salón
+                if (!isset($vistas[$key])) {
+                    $fotos[$key] = $row['ruta'];
+                    $vistas[$key] = true;
+                }
+            }
+
+            responder(200, ['fotos' => $fotos]);
+        } catch (PDOException $e) {
+            error_log('Error al obtener fotos de salones: ' . $e->getMessage());
+            responder(200, ['fotos' => []]); // Devolver array vacío en caso de error
+        }
+    }
+
     if ($accion === 'salones') {
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $stmt = $pdo->query('SELECT datos_json FROM salones_aplicacion WHERE id = 1');

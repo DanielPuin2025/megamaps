@@ -541,11 +541,36 @@ function urlFotoRuta(foto){
   return foto.startsWith('fotos_rutas/') ? foto : null;
 }
 function getFotoRuta(origenId, destinoNodeId, pasoNodeId){
-  return FOTOS_RUTA[claveFotoRuta(origenId,destinoNodeId,pasoNodeId)] || getFoto(pasoNodeId) || null;
+  // Si el paso ES el salón destino, usar foto única del salón
+  if (pasoNodeId === destinoNodeId) {
+    return FOTOS_SALONES[pasoNodeId] || FOTOS[pasoNodeId] || null;
+  }
+
+  // Para pasos intermedios, usar foto específica de ruta o foto general
+  return FOTOS_RUTA[claveFotoRuta(origenId,destinoNodeId,pasoNodeId)] || FOTOS[pasoNodeId] || null;
+}
+
+async function cargarFotosSalonesServidor(){
+  if(location.protocol==='file:') return;
+  try{
+    const respuesta = await fetch('api.php?action=fotos-salones');
+    if(!respuesta.ok) return;
+    const datos = await respuesta.json();
+    if(datos.fotos && typeof datos.fotos === 'object'){
+      FOTOS_SALONES = datos.fotos;
+      console.log('Fotos de salones cargadas:', Object.keys(FOTOS_SALONES).length);
+    }
+  }catch(error){
+    console.log('No se pudieron cargar fotos de salones:', error.message);
+  }
 }
 
 async function sincronizarFotosRutaServidor(subirLocales=false){
   if(location.protocol==='file:') return;
+
+  // NUEVO: Cargar fotos de salones primero
+  await cargarFotosSalonesServidor();
+
   for(const lugar of SITIOS){
     const fotosLocales=Object.entries(FOTOS_RUTA).filter(([clave])=>clave.startsWith(`${lugar.id}__`));
     if(subirLocales&&sesionAdminServidor){
@@ -625,6 +650,7 @@ let SALONES = cargarSalones();
 let RUTAS_PERSONALIZADAS = cargarRutas();
 let FOTOS = cargarFotos();
 let FOTOS_RUTA = cargarFotosRuta();
+let FOTOS_SALONES = {}; // Fotos únicas de salones desde la base de datos
 let sesionAdminServidor = false;
 let cargaRutasServidor = null;
 let cargaSalonesServidor = null;
