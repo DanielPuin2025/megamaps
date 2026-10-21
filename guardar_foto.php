@@ -117,15 +117,15 @@ try {
     ];
     $extensionFinal = $extensiones[$mime] ?? $extension ?? 'jpg';
 
-    $baseFotos = __DIR__ . DIRECTORY_SEPARATOR . 'fotos';
+    $baseFotos = __DIR__ . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'fotos';
     $carpeta = $baseFotos . DIRECTORY_SEPARATOR . 'salones';
     if (!is_dir($carpeta) && !mkdir($carpeta, 0755, true) && !is_dir($carpeta)) {
-        throw new RuntimeException('No se pudo crear la carpeta fotos/salones/.');
+        throw new RuntimeException('No se pudo crear la carpeta assets/fotos/salones/.');
     }
 
-    $baseDatos = __DIR__ . DIRECTORY_SEPARATOR . 'megamaps.sqlite';
+    $baseDatos = __DIR__ . DIRECTORY_SEPARATOR . 'db' . DIRECTORY_SEPARATOR . 'megamaps.db';
     if (!is_file($baseDatos)) {
-        throw new RuntimeException('No se encontró megamaps.sqlite en la carpeta del proyecto.');
+        throw new RuntimeException('No se encontró db/megamaps.db en la carpeta del proyecto.');
     }
 
     $pdo = new PDO('sqlite:' . $baseDatos, null, null, [
@@ -146,11 +146,11 @@ try {
 
     $nombreArchivo = 'salon-' . $salon . '-' . bin2hex(random_bytes(16)) . '.' . $extensionFinal;
     $archivoGuardado = $carpeta . DIRECTORY_SEPARATOR . $nombreArchivo;
-    $ruta = 'fotos/salones/' . $nombreArchivo;
+    $ruta = 'assets/fotos/salones/' . $nombreArchivo;
 
     if (!move_uploaded_file($foto['tmp_name'], $archivoGuardado)) {
         $archivoGuardado = null;
-        throw new RuntimeException('No se pudo mover la foto a la carpeta fotos/salones/.');
+        throw new RuntimeException('No se pudo mover la foto a la carpeta assets/fotos/salones/.');
     }
 
     $stmt = $pdo->prepare(
@@ -169,7 +169,7 @@ try {
         error_log('No se pudo limpiar la foto después de un error de base de datos: ' . $archivoGuardado);
     }
     error_log('Error de base de datos al guardar una foto de salón: ' . $error->getMessage());
-    mostrarResultado('Error del servidor', 'No se pudo registrar la ruta de la foto en megamaps.sqlite.', 500);
+    mostrarResultado('Error del servidor', 'No se pudo registrar la ruta de la foto en db/megamaps.db.', 500);
 } catch (Throwable $error) {
     if ($archivoGuardado !== null && is_file($archivoGuardado) && !unlink($archivoGuardado)) {
         error_log('No se pudo limpiar la foto después de un error inesperado: ' . $archivoGuardado);
