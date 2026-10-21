@@ -21,6 +21,16 @@ function escapar(string $valor): string
 function mostrarResultado(string $titulo, string $mensaje, int $estado, ?string $ruta = null): void
 {
     http_response_code($estado);
+    if (stripos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(
+            $estado < 400
+                ? ['ok' => true, 'ruta' => $ruta === null ? null : '../backend/' . $ruta]
+                : ['error' => $mensaje],
+            JSON_UNESCAPED_UNICODE
+        );
+        return;
+    }
     $rutaHtml = $ruta === null ? '' : '<p>Ruta guardada: <code>' . escapar($ruta) . '</code></p>';
     echo '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
         . '<meta name="viewport" content="width=device-width, initial-scale=1">'
@@ -130,10 +140,25 @@ try {
         throw new RuntimeException('No se pudo mover la foto a la carpeta fotos/salones/.');
     }
 
-    $stmt = $pdo->prepare(
-        'INSERT INTO fotos_salones (salon_numero, ruta) VALUES (:salon, :ruta)'
-    );
-    $stmt->execute(['salon' => $salon, 'ruta' => $ruta]);
+    $stmtAnteriores = $pdo->prepare('SELECT ruta FROM fotos_salones WHERE salon_numero = :salon');
+    $stmtAnteriores->execute(['salon' => $salon]);
+    $anteriores = $stmtAnteriores->fetchAll(PDO::FETCH_COLUMN);
+
+    // Cada salón conserva solo su foto más reciente.
+    $pdo->beginTransaction();
+    $pdo->prepare('DELETE FROM fotos_salones WHERE salon_numero = :salon')->execute(['salon' => $salon]);
+    $pdo->prepare('INSERT INTO fotos_salones (salon_numero, ruta) VALUES (:salon, :ruta)')
+        ->execute(['salon' => $salon, 'ruta' => $ruta]);
+    $pdo->commit();
+
+    foreach ($anteriores as $rutaAnterior) {
+        if (is_string($rutaAnterior) && preg_match('#^fotos/salones/salon-\d{3}-[0-9a-f]{32}\.jpg$#', $rutaAnterior)) {
+            $archivoAnterior = $baseFotos . DIRECTORY_SEPARATOR . 'salones' . DIRECTORY_SEPARATOR . basename($rutaAnterior);
+            if (is_file($archivoAnterior) && !unlink($archivoAnterior)) {
+                error_log('No se pudo eliminar la foto anterior del salón: ' . $archivoAnterior);
+            }
+        }
+    }
 
     mostrarResultado('Foto guardada', 'La foto quedó asociada al salón ' . $salon . '.', 200, $ruta);
 } catch (RuntimeException $error) {

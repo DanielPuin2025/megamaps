@@ -255,6 +255,25 @@ try {
         responder(200, ['status' => 'ok']);
     }
 
+    if ($accion === 'salon-photos') {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            header('Allow: GET');
+            responder(405, ['error' => 'Método no permitido.']);
+        }
+        $existe = $pdo->query("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'fotos_salones'")->fetchColumn();
+        $fotosSalones = [];
+        if ($existe) {
+            $stmt = $pdo->query('SELECT salon_numero, ruta FROM fotos_salones ORDER BY id');
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $fila) {
+                if (preg_match('#^fotos/salones/salon-\d{3}-[0-9a-f]{32}\.jpg$#', $fila['ruta'])
+                    && is_file(__DIR__ . DIRECTORY_SEPARATOR . $fila['ruta'])) {
+                    $fotosSalones[$fila['salon_numero']] = '../backend/' . $fila['ruta'];
+                }
+            }
+        }
+        responder(200, ['fotos' => (object) $fotosSalones]);
+    }
+
     if ($accion === 'admin-login') {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Allow: POST');
