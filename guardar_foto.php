@@ -33,7 +33,7 @@ function mostrarResultado(string $titulo, string $mensaje, int $estado, ?string 
         . '.links{display:flex;gap:18px;flex-wrap:wrap}</style>'
         . '</head><body><main class="card"><h1>' . escapar($titulo) . '</h1><p>'
         . escapar($mensaje) . '</p>' . $rutaHtml
-        . '<p class="links"><a href="subir_foto.html">Subir otra foto</a>'
+        . '<p class="links"><a href="admin.html">Subir otra foto</a>'
         . '<a href="index.html">Volver a MegaMaps</a></p></main></body></html>';
 }
 
@@ -61,7 +61,7 @@ try {
     }
 
     if (!isset($_FILES['foto']) || !is_array($_FILES['foto'])) {
-        throw new RuntimeException('Selecciona una foto JPEG para subir.');
+        throw new RuntimeException('Selecciona una foto para subir.');
     }
 
     $foto = $_FILES['foto'];
@@ -75,9 +75,9 @@ try {
     if ($foto['error'] !== UPLOAD_ERR_OK) {
         $errores = [
             UPLOAD_ERR_INI_SIZE => 'La foto supera el límite de subida configurado en PHP.',
-            UPLOAD_ERR_FORM_SIZE => 'La foto supera el límite de 1 GB.',
+            UPLOAD_ERR_FORM_SIZE => 'La foto supera el límite del formulario.',
             UPLOAD_ERR_PARTIAL => 'La foto solo se recibió parcialmente. Inténtalo de nuevo.',
-            UPLOAD_ERR_NO_FILE => 'Selecciona una foto JPEG para subir.',
+            UPLOAD_ERR_NO_FILE => 'Selecciona una foto para subir.',
             UPLOAD_ERR_NO_TMP_DIR => 'El servidor no tiene una carpeta temporal configurada.',
             UPLOAD_ERR_CANT_WRITE => 'El servidor no pudo escribir el archivo temporal.',
             UPLOAD_ERR_EXTENSION => 'Una extensión de PHP bloqueó la subida.',
@@ -88,33 +88,34 @@ try {
     if ($foto['size'] < 1) {
         throw new RuntimeException('La foto debe pesar más de 0 bytes.');
     }
-    // Límite de tamaño removido para permitir archivos de cualquier tamaño
 
-    // Validación mejorada y más flexible de imágenes
-    $informacionImagen = @getimagesize($foto['tmp_name']);
+    // Validación SUPER FLEXIBLE - acepta cualquier imagen
     $mime = @(new finfo(FILEINFO_MIME_TYPE))->file($foto['tmp_name']);
-
-    // Tipos permitidos con validación flexible
-    $tiposPermitidos = [
-        'image/jpeg', 'image/jpg', 'image/pjpeg',
-        'image/png', 'image/x-png',
-        'image/webp'
-    ];
-
-    // Extensiones permitidas
     $extension = strtolower(pathinfo($foto['name'] ?? '', PATHINFO_EXTENSION));
-    $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'webp'];
 
-    // Validar que sea una imagen válida (con al menos una verificación exitosa)
-    $esImagenValida = (
-        $informacionImagen !== false ||
-        in_array($mime, $tiposPermitidos, true) ||
-        in_array($extension, $extensionesPermitidas, true)
+    // Validar que sea una imagen
+    $esImagen = (
+        // Por MIME type (cualquier cosa que empiece con image/)
+        strpos($mime, 'image/') === 0 ||
+        // Por extensión
+        in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'tif'], true) ||
+        // Si getimagesize funciona, es una imagen
+        @getimagesize($foto['tmp_name']) !== false
     );
 
-    if (!$esImagenValida) {
-        throw new RuntimeException('El archivo debe ser una imagen válida (JPEG, PNG o WebP).');
+    if (!$esImagen) {
+        throw new RuntimeException('El archivo debe ser una imagen.');
     }
+
+    // Determinar extensión para guardar
+    $extensiones = [
+        'image/jpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/pjpeg' => 'jpg',
+        'image/png' => 'png', 'image/x-png' => 'png',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
+        'image/bmp' => 'bmp', 'image/x-ms-bmp' => 'bmp'
+    ];
+    $extensionFinal = $extensiones[$mime] ?? $extension ?? 'jpg';
 
     $baseFotos = __DIR__ . DIRECTORY_SEPARATOR . 'fotos';
     $carpeta = $baseFotos . DIRECTORY_SEPARATOR . 'salones';
@@ -142,19 +143,6 @@ try {
         'CREATE INDEX IF NOT EXISTS idx_fotos_salones_numero
          ON fotos_salones (salon_numero)'
     );
-
-    // Determinar extensión correcta basada en el tipo de archivo
-    $extensionFinal = 'jpg'; // Por defecto
-    if ($informacionImagen !== false) {
-        $extensiones = [
-            IMAGETYPE_JPEG => 'jpg',
-            IMAGETYPE_PNG => 'png',
-            IMAGETYPE_WEBP => 'webp'
-        ];
-        $extensionFinal = $extensiones[$informacionImagen[2]] ?? $extension ?? 'jpg';
-    } elseif (in_array($extension, $extensionesPermitidas, true)) {
-        $extensionFinal = $extension;
-    }
 
     $nombreArchivo = 'salon-' . $salon . '-' . bin2hex(random_bytes(16)) . '.' . $extensionFinal;
     $archivoGuardado = $carpeta . DIRECTORY_SEPARATOR . $nombreArchivo;
